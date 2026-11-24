@@ -16,6 +16,10 @@ This file is what the daily scheduled task follows. Do these steps in order.
    (for example translation, sales or marketing roles that only matched on a word
    like "QA" or "tech"). If `profile/cv.md` or `profile/cv.txt` exists, read it and
    use it to judge fit and to write one short "why it fits" line per job.
+   **Drop BPO companies** (call centers, outsourcing / virtual-assistant / staffing
+   firms, healthcare or back-office outsourcing). Keep companies that build their own
+   product (software, SaaS, tech) even if they also run a support office in Cebu.
+   If you can't tell, keep it and add "⚠️ may be BPO" to its line.
 
 3. Reply with the day's report as your final message, in this format, and nothing else:
 
@@ -38,4 +42,5 @@ This file is what the daily scheduled task follows. Do these steps in order.
 
 - Looking for: **internships** (OJT / practicum / trainee) — later also entry-level jobs
 - Fields: software development, data / AI / ML, IT (support, networking, security, QA)
+- Avoid: **BPO companies** (call centers, outsourcing, virtual-assistant and staffing firms)
 - Location: **Cebu City, Philippines** (Cebu metro area) or remote roles open to the Philippines
