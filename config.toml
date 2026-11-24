@@ -1,0 +1,52 @@
+# Job Hunter settings. Edit this file to change what the daily scan looks for.
+
+# Which kinds of postings to report.
+#   "internship" = internships, OJT, practicum, trainee programs
+#   "entry"      = junior / entry-level / fresh-grad jobs
+#   "any"        = every job that matches your fields (ignores level)
+# Switch to ["internship", "entry"] when you start looking for jobs.
+job_types = ["internship"]
+
+# Search terms sent to each job site. Keep them short; the sites match loosely.
+search_terms = [
+  "software intern",
+  "developer intern",
+  "IT intern",
+  "data intern",
+  "AI intern",
+  "programmer OJT",
+  "web developer intern",
+]
+
+# A posting is kept only if its title contains at least one of these
+# (whole-word, case-insensitive).
+field_keywords = [
+  "software", "developer", "development", "programmer", "programming", "engineer", "engineering",
+  "web", "frontend", "front-end", "backend", "back-end", "full stack", "fullstack", "mobile",
+  "android", "ios", "app", "qa", "quality assurance", "tester", "automation", "devops", "cloud",
+  "it", "information technology", "ict", "computer", "tech", "technical support", "helpdesk", "help desk",
+  "network", "networking", "system", "systems", "sysadmin", "cyber", "cybersecurity", "security", "soc",
+  "data", "analyst", "analytics", "database", "sql", "bi", "business intelligence",
+  "ai", "artificial intelligence", "machine learning", "ml", "python", "java", "javascript", "react",
+  "ui", "ux", "product",
+]
+
+# Titles containing any of these are dropped.
+exclude_keywords = ["senior", "sr.", "lead", "manager", "head of", "principal", "director", "architect"]
+
+# Where you can work. A posting is kept if its location mentions any of these,
+# or it is remote and open to the Philippines.
+locations = ["Cebu", "Cebu City", "Mandaue", "Lapu-Lapu", "Lapu Lapu", "Talisay", "Consolacion", "Liloan", "Minglanilla"]
+include_remote = true
+
+# Only report postings this many hours old or newer (the daily run uses 26h for overlap).
+max_age_hours = 26
+
+# Optional: companies whose own career pages to check directly
+# (the "career page" trick from the reel). Board name = the part of the URL after the domain.
+#   jobs.lever.co/<name>        -> lever_companies
+#   jobs.ashbyhq.com/<name>     -> ashby_companies
+#   boards.greenhouse.io/<name> -> greenhouse_companies
+lever_companies = []
+ashby_companies = []
+greenhouse_companies = []
