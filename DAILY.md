@@ -20,6 +20,10 @@ This file is what the daily scheduled task follows. Do these steps in order.
    firms, healthcare or back-office outsourcing). Keep companies that build their own
    product (software, SaaS, tech) even if they also run a support office in Cebu.
    If you can't tell, keep it and add "⚠️ may be BPO" to its line.
+   **Watch for fake or spam listings**, mostly from Google Jobs: a posting found only on
+   repost sites such as Trabajo.org or Jobrapido, from a company with no real web
+   presence or an odd name, with a clickbait title ("Ship Real Code"), or "remote"
+   but tagged to Cebu. Drop obvious spam; otherwise add "⚠️ check this company is real".
 
 3. Reply with the day's report as your final message, in this format, and nothing else:
 
