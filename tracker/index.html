@@ -1,0 +1,362 @@
+<title>Cebu Internship Tracker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: one column of posting cards under a sticky status bar; each card = posting facts on top, your tracking row underneath. */
+:root {
+  --bg: #f3f6f7;
+  --surface: #ffffff;
+  --fg: #14232b;
+  --muted: #5b6b73;
+  --line: #d9e2e6;
+  --accent: #0e7c86;
+  --accent-ink: #ffffff;
+  --accent-soft: #e0f1f2;
+  --good: #1d7a46; --good-soft: #e2f3e8;
+  --warn: #9a6200; --warn-soft: #fbf0d9;
+  --bad: #b3261e;  --bad-soft: #fbe5e3;
+  --info: #3b4fb8; --info-soft: #e6e9fa;
+  --display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1619; --surface: #162227; --fg: #e4ecef; --muted: #93a5ad; --line: #2a3a41;
+  --accent: #3cb8c2; --accent-ink: #06272a; --accent-soft: #173a3e;
+  --good: #6fd19a; --good-soft: #17352a; --warn: #f0b75a; --warn-soft: #3a2c12;
+  --bad: #f28b82; --bad-soft: #3d1f1d; --info: #a5b2ff; --info-soft: #232a4d;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0e1619; --surface: #162227; --fg: #e4ecef; --muted: #93a5ad; --line: #2a3a41;
+  --accent: #3cb8c2; --accent-ink: #06272a; --accent-soft: #173a3e;
+  --good: #6fd19a; --good-soft: #17352a; --warn: #f0b75a; --warn-soft: #3a2c12;
+  --bad: #f28b82; --bad-soft: #3d1f1d; --info: #a5b2ff; --info-soft: #232a4d;
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+a { color: var(--accent); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.wrap { max-width: 760px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+header.top .wrap { padding-block: 14px 12px; display: grid; gap: 10px; }
+h1 { font-family: var(--display); font-size: 1.35rem; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.sub { color: var(--muted); font-size: 0.85rem; margin: 2px 0 0; }
+.counts { display: flex; flex-wrap: wrap; gap: 8px; }
+.count { display: flex; align-items: baseline; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); font-size: 0.85rem; cursor: pointer; }
+.count b { font-family: var(--display); font-size: 1rem; font-variant-numeric: tabular-nums; }
+.count[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.tools { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; font-size: 0.85rem; color: var(--muted); }
+.tools label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+.next { font-size: 0.85rem; color: var(--info); font-weight: 500; }
+
+main .wrap { padding-block: 16px 48px; display: grid; gap: 14px; }
+.note { font-size: 0.85rem; color: var(--muted); padding: 10px 12px; border: 1px dashed var(--line); border-radius: 8px; }
+.note.err { color: var(--bad); border-color: var(--bad); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.card.dim { opacity: 0.62; }
+.card .head { padding: 14px 16px 10px; display: grid; gap: 6px; }
+.role { font-family: var(--display); font-size: 1.08rem; font-weight: 600; margin: 0; text-wrap: balance; }
+.co { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-weight: 500; }
+.pill { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.product { background: var(--good-soft); color: var(--good); }
+.pill.bpo { background: var(--bad-soft); color: var(--bad); }
+.pill.unclear { background: var(--warn-soft); color: var(--warn); }
+.pill.st-to-apply { background: var(--accent-soft); color: var(--accent); }
+.pill.st-applied { background: var(--info-soft); color: var(--info); }
+.pill.st-interview { background: var(--warn-soft); color: var(--warn); }
+.pill.st-offer { background: var(--good-soft); color: var(--good); }
+.pill.st-rejected, .pill.st-skip { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.83rem; color: var(--muted); }
+.meta span { white-space: nowrap; }
+.body { padding: 0 16px 12px; display: grid; gap: 10px; min-width: 0; }
+.about { margin: 0; font-size: 0.9rem; }
+.flag { font-size: 0.85rem; background: var(--warn-soft); color: var(--warn); border-radius: 6px; padding: 6px 10px; }
+details.specs summary { cursor: pointer; font-weight: 600; font-size: 0.85rem; color: var(--accent); }
+details.specs ul { margin: 8px 0 0; padding-left: 20px; font-size: 0.88rem; display: grid; gap: 3px; }
+.links { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 7px; border: 1px solid var(--line); background: var(--surface); text-decoration: none; color: var(--fg); font-size: 0.85rem; font-weight: 500; cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.danger { color: var(--bad); border-color: var(--bad); }
+
+.track { border-top: 1px solid var(--line); background: var(--bg); padding: 12px 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px 14px; align-items: end; }
+.field { display: grid; gap: 4px; font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; min-width: 0; }
+.field input, .field select, .field textarea { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 0.9rem; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 7px; padding: 7px 9px; width: 100%; min-width: 0; }
+.field textarea { resize: vertical; min-height: 38px; }
+.field.wide { grid-column: 1 / -1; }
+.check { display: flex; align-items: center; gap: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; padding-block: 6px; }
+.check input { width: 20px; height: 20px; accent-color: var(--accent); }
+.saved { font-size: 0.75rem; color: var(--muted); grid-column: 1 / -1; min-height: 1em; }
+
+.add { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.add summary { padding: 12px 16px; cursor: pointer; font-weight: 600; color: var(--accent); }
+.add form { padding: 0 16px 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px 14px; }
+@media (prefers-reduced-motion: no-preference) { .card { transition: opacity .2s; } }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div>
+      <h1>Cebu Internship Tracker</h1>
+      <p class="sub">Tech internships around Cebu City. Tick what you've applied to and add interview dates.</p>
+    </div>
+    <div class="counts" id="counts" role="group" aria-label="Filter by status"></div>
+    <div class="tools">
+      <label><input type="checkbox" id="hideBpo" checked> Hide BPO companies</label>
+      <label><input type="checkbox" id="hideClosed"> Hide rejected &amp; skipped</label>
+      <span class="next" id="nextInterview"></span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div id="status" class="note">Loading your internships…</div>
+    <div id="list" style="display:grid;gap:14px"></div>
+
+    <details class="add" id="addBox">
+      <summary>+ Add an internship you found yourself</summary>
+      <form id="addForm">
+        <label class="field">Role<input id="addRole" required placeholder="e.g. Web Developer Intern"></label>
+        <label class="field">Company<input id="addCompany" required placeholder="Company name"></label>
+        <label class="field">Location<input id="addLocation" placeholder="Cebu City"></label>
+        <label class="field">Link to posting<input id="addUrl" type="url" placeholder="https://…"></label>
+        <label class="field">Company type
+          <select id="addType"><option value="product">Product / tech company</option><option value="unclear">Not sure</option><option value="bpo">BPO</option></select>
+        </label>
+        <div style="display:flex;align-items:end"><button class="btn primary" type="submit">Add internship</button></div>
+      </form>
+    </details>
+  </div>
+</main>
+
+<script>
+const STATUSES = [
+  ["to-apply", "To apply"], ["applied", "Applied"], ["interview", "Interview"],
+  ["offer", "Offer"], ["rejected", "Rejected"], ["skip", "Not interested"],
+];
+const TYPE_LABEL = { product: "Product company", bpo: "BPO", unclear: "Unverified" };
+const COLL = "internships";
+
+let jobs = [];          // [{id, ...data}]
+let filter = "all";
+let col = null;         // db collection ref
+let canWrite = true;
+const pending = {};     // per-doc write chain
+const confirmDelete = new Set();
+
+const $ = (id) => document.getElementById(id);
+function el(tag, attrs = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === "class") n.className = v;
+    else if (k === "text") n.textContent = v;
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v === true ? "" : v);
+  }
+  for (const k of kids.flat()) if (k != null) n.append(k);
+  return n;
+}
+const safeUrl = (u) => (typeof u === "string" && u.startsWith("https://") ? u : null);
+const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
+function fmtDate(d) {
+  if (!d) return "";
+  const dt = new Date(d.length === 10 ? d + "T00:00:00" : d);
+  if (isNaN(dt)) return d;
+  return dt.toLocaleDateString("en-PH", { day: "numeric", month: "short", year: dt.getFullYear() !== new Date().getFullYear() ? "numeric" : undefined });
+}
+function fmtWhen(d) {
+  const dt = new Date(d);
+  if (isNaN(dt)) return d;
+  return dt.toLocaleString("en-PH", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+}
+
+function save(id, patch, card) {
+  if (!col || !canWrite) return;
+  const note = card && card.querySelector(".saved");
+  if (note) note.textContent = "Saving…";
+  const job = jobs.find((j) => j.id === id);
+  if (job) Object.assign(job, patch);
+  pending[id] = (pending[id] || Promise.resolve()).then(() =>
+    col.doc(id).update(patch).then(
+      () => { if (note) note.textContent = "Saved"; },
+      (e) => {
+        if (note) note.textContent = e && e.code === "invalid_argument"
+          ? "You can view this tracker but not change it." : "Couldn't save. Check your connection and try again.";
+        if (e && e.code === "invalid_argument") canWrite = false;
+      }));
+}
+
+function visible(j) {
+  if ($("hideBpo").checked && j.companyType === "bpo") return false;
+  if ($("hideClosed").checked && (j.status === "rejected" || j.status === "skip")) return false;
+  if (filter !== "all" && j.status !== filter) return false;
+  return true;
+}
+function sortKey(j) {
+  const order = { interview: 0, offer: 1, "to-apply": 2, applied: 3, rejected: 4, skip: 5 };
+  return [order[j.status] ?? 2, j.status === "interview" ? (j.interviewAt || "9") : "", j.rank ?? 99];
+}
+function cmp(a, b) {
+  const x = sortKey(a), y = sortKey(b);
+  for (let i = 0; i < x.length; i++) { if (x[i] < y[i]) return -1; if (x[i] > y[i]) return 1; }
+  return 0;
+}
+
+function renderCounts() {
+  const base = jobs.filter((j) => !($("hideBpo").checked && j.companyType === "bpo"));
+  const n = (s) => base.filter((j) => j.status === s).length;
+  const items = [["all", "All", base.length], ["to-apply", "To apply", n("to-apply")], ["applied", "Applied", n("applied")], ["interview", "Interviews", n("interview")], ["offer", "Offers", n("offer")]];
+  $("counts").replaceChildren(...items.map(([key, label, num]) =>
+    el("button", { class: "count", type: "button", "aria-pressed": String(filter === key), onclick: () => { filter = key; render(); } },
+      el("b", { text: String(num) }), label)));
+  const upcoming = jobs.filter((j) => j.interviewAt && new Date(j.interviewAt) >= new Date(Date.now() - 3600e3))
+    .sort((a, b) => a.interviewAt.localeCompare(b.interviewAt))[0];
+  $("nextInterview").textContent = upcoming ? `Next interview: ${upcoming.company}, ${fmtWhen(upcoming.interviewAt)}` : "";
+}
+
+function card(j) {
+  const c = el("article", { class: "card" + (j.status === "rejected" || j.status === "skip" ? " dim" : "") });
+  const status = STATUSES.find((s) => s[0] === j.status) || STATUSES[0];
+  const posting = safeUrl(j.url);
+  const site = safeUrl(j.companyUrl);
+
+  const head = el("div", { class: "head" },
+    el("h2", { class: "role", text: j.role || "Untitled role" }),
+    el("div", { class: "co" },
+      el("span", { text: j.company || "" }),
+      el("span", { class: "pill " + (j.companyType || "unclear"), text: TYPE_LABEL[j.companyType] || "Unverified" }),
+      el("span", { class: "pill st-" + status[0], text: status[1] })),
+    el("div", { class: "meta" },
+      j.location && el("span", { text: "📍 " + j.location }),
+      j.setup && el("span", { text: j.setup }),
+      j.pay && el("span", { text: "💰 " + j.pay }),
+      j.source && el("span", { text: "via " + j.source }),
+      j.posted && el("span", { text: "Posted " + fmtDate(j.posted) })));
+
+  const body = el("div", { class: "body" },
+    j.about && el("p", { class: "about", text: j.about }),
+    j.flag && el("div", { class: "flag", text: "⚠ " + j.flag }),
+    Array.isArray(j.specs) && j.specs.length && el("details", { class: "specs" },
+      el("summary", { text: "What they're looking for" }),
+      el("ul", {}, j.specs.map((s) => el("li", { text: String(s) })))),
+    el("div", { class: "links" },
+      posting && el("a", { class: "btn primary", href: posting, target: "_blank", rel: "noopener" }, "Open posting ↗"),
+      site && el("a", { class: "btn", href: site, target: "_blank", rel: "noopener" }, "Company site ↗")));
+
+  // Tracking row
+  const applied = el("input", { type: "checkbox", id: "ap-" + j.id, checked: j.status !== "to-apply" && j.status !== "skip" ? true : false, disabled: !canWrite });
+  const appliedOn = el("input", { type: "date", id: "on-" + j.id, value: j.appliedOn || "", disabled: !canWrite });
+  const interview = el("input", { type: "datetime-local", id: "iv-" + j.id, value: j.interviewAt || "", disabled: !canWrite });
+  const sel = el("select", { id: "st-" + j.id, disabled: !canWrite }, STATUSES.map(([v, l]) => el("option", { value: v, selected: v === j.status, text: l })));
+  const notes = el("textarea", { id: "nt-" + j.id, rows: "2", placeholder: "Interviewer, what they asked, follow-up…", disabled: !canWrite });
+  notes.value = j.notes || "";
+
+  applied.addEventListener("change", () => {
+    const patch = applied.checked
+      ? { status: j.status === "to-apply" || j.status === "skip" ? "applied" : j.status, appliedOn: j.appliedOn || today() }
+      : { status: "to-apply", appliedOn: "" };
+    save(j.id, patch, c); render();
+  });
+  appliedOn.addEventListener("change", () => save(j.id, { appliedOn: appliedOn.value }, c));
+  interview.addEventListener("change", () => {
+    const patch = { interviewAt: interview.value };
+    if (interview.value && ["to-apply", "applied"].includes(j.status)) { patch.status = "interview"; if (!j.appliedOn) patch.appliedOn = today(); }
+    save(j.id, patch, c); render();
+  });
+  sel.addEventListener("change", () => {
+    const patch = { status: sel.value };
+    if (sel.value !== "to-apply" && sel.value !== "skip" && !j.appliedOn) patch.appliedOn = today();
+    save(j.id, patch, c); render();
+  });
+  let t;
+  notes.addEventListener("input", () => { clearTimeout(t); t = setTimeout(() => save(j.id, { notes: notes.value }, c), 800); });
+  notes.addEventListener("blur", () => { clearTimeout(t); if ((j.notes || "") !== notes.value) save(j.id, { notes: notes.value }, c); });
+
+  const del = confirmDelete.has(j.id)
+    ? el("span", { style: "display:flex;gap:6px" },
+        el("button", { class: "btn danger", type: "button", onclick: () => { confirmDelete.delete(j.id); col.doc(j.id).delete().catch(() => {}); } }, "Yes, remove"),
+        el("button", { class: "btn", type: "button", onclick: () => { confirmDelete.delete(j.id); render(); } }, "Keep"))
+    : el("button", { class: "btn", type: "button", disabled: !canWrite, onclick: () => { confirmDelete.add(j.id); render(); } }, "Remove");
+
+  const track = el("div", { class: "track" },
+    el("label", { class: "check", for: "ap-" + j.id }, applied, "I applied"),
+    el("label", { class: "field", for: "on-" + j.id }, "Applied on", appliedOn),
+    el("label", { class: "field", for: "iv-" + j.id }, "Interview date & time", interview),
+    el("label", { class: "field", for: "st-" + j.id }, "Status", sel),
+    el("label", { class: "field wide", for: "nt-" + j.id }, "Notes", notes),
+    el("div", { class: "saved" }),
+    el("div", { style: "grid-column:1/-1;display:flex;justify-content:flex-end" }, del));
+
+  c.append(head, body, track);
+  return c;
+}
+
+function render() {
+  renderCounts();
+  const shown = jobs.filter(visible).sort(cmp);
+  $("list").replaceChildren(...shown.map(card));
+  if (!col) return;
+  if (!jobs.length) { $("status").hidden = false; $("status").className = "note"; $("status").textContent = "No internships yet. New matches from the daily scan will appear here, or add one below."; }
+  else if (!shown.length) { $("status").hidden = false; $("status").className = "note"; $("status").textContent = "Nothing in this view. Try another filter above."; }
+  else $("status").hidden = true;
+}
+
+function remember() {
+  try { localStorage.setItem("tracker-prefs", JSON.stringify({ hideBpo: $("hideBpo").checked, hideClosed: $("hideClosed").checked })); } catch {}
+}
+try {
+  const p = JSON.parse(localStorage.getItem("tracker-prefs") || "{}");
+  if (typeof p.hideBpo === "boolean") $("hideBpo").checked = p.hideBpo;
+  if (typeof p.hideClosed === "boolean") $("hideClosed").checked = p.hideClosed;
+} catch {}
+$("hideBpo").addEventListener("change", () => { remember(); render(); });
+$("hideClosed").addEventListener("change", () => { remember(); render(); });
+
+$("addForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!col) return;
+  const role = $("addRole").value.trim(), company = $("addCompany").value.trim();
+  if (!role || !company) return;
+  const url = $("addUrl").value.trim();
+  try {
+    await col.add({ role, company, location: $("addLocation").value.trim(), url: url.startsWith("https://") ? url : "",
+      companyType: $("addType").value, source: "Added by you", status: "to-apply", appliedOn: "", interviewAt: "", notes: "",
+      posted: today(), rank: 50, specs: [] });
+    $("addForm").reset(); $("addBox").open = false;
+  } catch (err) {
+    $("status").hidden = false; $("status").className = "note err";
+    $("status").textContent = err && err.code === "quota_exceeded" ? "The tracker is full. Remove some old internships first." : "Couldn't add it. Check your connection and try again.";
+  }
+});
+
+render();
+(async () => {
+  const db = await window.claude?.use?.("db");
+  if (!db) {
+    $("status").className = "note err";
+    $("status").textContent = "Sign in to claude.ai to see and update your internships.";
+    return;
+  }
+  try {
+    const user = await window.claude.use("user");
+    if (user) { const w = await user.can("data.write"); if (w === false) canWrite = false; }
+  } catch {}
+  col = db.collection(COLL);
+  const slow = setTimeout(() => { $("status").textContent = "Still connecting… your list will appear when it loads."; }, 10000);
+  col.onSnapshot((snap) => {
+    if (!snap.metadata.fromCache) clearTimeout(slow);
+    jobs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    render();
+  }, () => {
+    clearTimeout(slow);
+    $("status").hidden = false; $("status").className = "note err";
+    $("status").textContent = "Couldn't load your internships. Reload the page to try again.";
+  });
+})();
+</script>
