@@ -18,6 +18,7 @@ daily Claude scheduled task (07:47 PH time)
 | LinkedIn (public search) | Cebu postings + remote roles listed for the Philippines |
 | JobStreet PH | Cebu postings (the biggest PH job board) |
 | Kalibrr | PH postings, kept if in Cebu or work-from-home |
+| Google Jobs (via SearchApi.io) | Everything Google Jobs collects, including Indeed and company career sites. Needs a SearchApi key; 2 searches per run |
 | Remotive | Remote internships open worldwide / Asia |
 | Lever / Ashby / Greenhouse | Company career pages you list in `config.toml` (the trick from the reel) |
 

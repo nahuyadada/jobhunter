@@ -15,6 +15,7 @@ import argparse
 import html
 import json
 import math
+import os
 import re
 import sys
 import time
@@ -237,6 +238,57 @@ def src_greenhouse(cfg, hours):
     return jobs
 
 
+def _ago_to_iso(text: str) -> str:
+    """Turn Google's '3 days ago' / '5 hours ago' into an ISO timestamp."""
+    m = re.search(r"(\d+)\+?\s*(minute|hour|day|week|month)", text or "", re.I)
+    if not m:
+        return ""
+    n, unit = int(m.group(1)), m.group(2).lower()
+    delta = {"minute": timedelta(minutes=n), "hour": timedelta(hours=n), "day": timedelta(days=n),
+             "week": timedelta(weeks=n), "month": timedelta(days=30 * n)}[unit]
+    return (NOW - delta).isoformat()
+
+
+def src_google_jobs(cfg, hours):
+    """Google Jobs, through SearchApi.io (Google has no public jobs API).
+
+    Needs a SearchApi key. In the Claude cloud environment the network proxy adds it
+    to requests for www.searchapi.io; elsewhere set SEARCHAPI_KEY. Each query uses one
+    of the account's searches, so keep google_jobs_queries short.
+    """
+    queries = cfg.get("google_jobs_queries") or []
+    if not queries:
+        return []
+    key = os.environ.get("SEARCHAPI_KEY", "injected-by-proxy")
+    jobs = []
+    for q in queries:
+        url = "https://www.searchapi.io/api/v1/search?" + urllib.parse.urlencode(
+            {"engine": "google_jobs", "q": q, "location": cfg.get("google_jobs_location", "Cebu City,Central Visayas,Philippines"),
+             "gl": "ph", "hl": "en"})
+        req = urllib.request.Request(url, headers={"User-Agent": UA, "Authorization": f"Bearer {key}"})
+        try:
+            with urllib.request.urlopen(req, timeout=40) as r:
+                data = json.loads(r.read().decode("utf-8", "replace"))
+        except urllib.error.HTTPError as e:
+            if e.code in (401, 403):
+                raise RuntimeError("no working SearchApi key (add one to turn on Google Jobs)") from None
+            if e.code == 429:
+                raise RuntimeError("SearchApi searches used up for now") from None
+            raise
+        for d in data.get("jobs", []):
+            ext = d.get("detected_extensions") or {}
+            links = d.get("apply_links") or []
+            link = d.get("apply_link") or (links[0].get("link") if links else "") or d.get("sharing_link", "")
+            via = (d.get("via") or "").replace("via ", "")
+            jobs.append(Job(
+                d.get("title", ""), d.get("company_name", ""), d.get("location", ""), link,
+                f"Google Jobs ({via})" if via else "Google Jobs", _ago_to_iso(ext.get("posted_at", "")),
+                remote=bool(ext.get("work_from_home")) or "remote" in (d.get("location") or "").lower(),
+                snippet=strip_tags(d.get("description", ""))[:240], tags=[ext.get("schedule") or ""],
+            ))
+    return jobs
+
+
 SOURCES = {
     "LinkedIn": src_linkedin,
     "JobStreet": src_jobstreet,
@@ -245,6 +297,7 @@ SOURCES = {
     "Lever": src_lever,
     "Ashby": src_ashby,
     "Greenhouse": src_greenhouse,
+    "Google": src_google_jobs,
 }
 
 # ---------------------------------------------------------------- filtering

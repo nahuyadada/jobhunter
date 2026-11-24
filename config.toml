@@ -42,6 +42,15 @@ include_remote = true
 # Only report postings this many hours old or newer (the daily run uses 26h for overlap).
 max_age_hours = 26
 
+# Google Jobs (via SearchApi.io). Each query uses one search from your SearchApi
+# account (the free account has 100 searches in total), so keep this list short.
+# Set it to [] to turn Google Jobs off.
+google_jobs_queries = [
+  "IT software intern Cebu",
+  "data AI intern Cebu",
+]
+google_jobs_location = "Cebu City,Central Visayas,Philippines"
+
 # Optional: companies whose own career pages to check directly
 # (the "career page" trick from the reel). Board name = the part of the URL after the domain.
 #   jobs.lever.co/<name>        -> lever_companies
