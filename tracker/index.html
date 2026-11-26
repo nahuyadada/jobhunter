@@ -126,6 +126,38 @@ dl.info dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 details.specs summary { cursor: pointer; font-weight: 600; font-size: 0.85rem; color: var(--accent); }
 details.specs ul { margin: 8px 0 0; padding-left: 20px; font-size: 0.88rem; display: grid; gap: 3px; }
 
+/* Sheet view */
+body.wide-mode .wrap { max-width: 1440px; }
+.viewbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: none; padding: 6px 12px; font-size: 0.83rem; font-weight: 600; color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.sheetwrap { overflow: auto; max-height: calc(100dvh - 160px); border: 1px solid var(--line); border-radius: 8px; background: var(--surface); -webkit-overflow-scrolling: touch; }
+table.sheet { border-collapse: separate; border-spacing: 0; font-size: 13px; min-width: 100%; font-variant-numeric: tabular-nums; }
+.sheet th, .sheet td { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 5px 8px; white-space: nowrap; text-align: left; vertical-align: middle; }
+.sheet thead th { position: sticky; top: 0; z-index: 2; background: var(--sunken); color: var(--muted); font-size: 12px; font-weight: 600; }
+.sheet thead th.colletter { text-align: center; font-weight: 500; font-size: 11px; color: var(--muted); padding: 2px 8px; }
+.sheet thead tr:nth-child(2) th { top: 21px; }
+.sheet .rn { position: sticky; left: 0; z-index: 1; background: var(--sunken); color: var(--muted); text-align: right; min-width: 34px; font-size: 12px; }
+.sheet .nm { position: sticky; left: 34px; z-index: 1; background: var(--surface); min-width: 190px; max-width: 240px; overflow: hidden; text-overflow: ellipsis; box-shadow: 1px 0 0 var(--line); }
+.sheet thead .rn, .sheet thead .nm { z-index: 3; background: var(--sunken); }
+.sheet tbody tr:hover td, .sheet tbody tr.hl td { background: var(--accent-soft); }
+.sheet tbody tr.dim td { color: var(--muted); }
+.sheet td.trunc { max-width: 300px; overflow: hidden; text-overflow: ellipsis; }
+.sheet .linkbtn { border: 0; background: none; padding: 0; color: var(--fg); font-weight: 600; cursor: pointer; text-align: left; max-width: 100%; overflow: hidden; text-overflow: ellipsis; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+.sheet .linkbtn:hover { color: var(--accent); text-decoration-color: currentColor; }
+.sheet input, .sheet select { font-size: 13px; border: 1px solid transparent; background: transparent; border-radius: 4px; padding: 2px 4px; max-width: 100%; }
+.sheet input:hover, .sheet select:hover, .sheet input:focus, .sheet select:focus { border-color: var(--line); background: var(--surface); }
+.sheet input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); }
+.sheet input.notes { min-width: 200px; }
+.sheet td.c { text-align: center; }
+.sheet .pill { font-size: 10px; }
+#hovercard { position: fixed; z-index: 30; width: min(400px, calc(100vw - 24px)); max-height: 70vh; overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22); padding: 14px 16px; pointer-events: none; display: grid; gap: 8px; font-size: 13.5px; }
+#hovercard h4 { margin: 0; font-family: var(--display); font-size: 1rem; }
+#hovercard .hint { font-size: 12px; }
+#overlay { position: fixed; inset: 0; z-index: 40; background: rgba(8, 18, 22, 0.5); overflow-y: auto; padding: calc(16px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 32px max(16px, env(safe-area-inset-left, 0px)); }
+#overlay .sheetcard { max-width: 760px; margin: 0 auto; display: grid; gap: 8px; }
+#overlay .closebar { display: flex; justify-content: flex-end; }
 .toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; z-index: 20; }
 @media (prefers-reduced-motion: reduce) { .panel > summary::after { transition: none; } }
 </style>
@@ -185,6 +217,13 @@ details.specs ul { margin: 8px 0 0; padding-left: 20px; font-size: 0.88rem; disp
     </details>
 
     <div class="toolbar">
+      <div class="viewbar">
+        <div class="seg" role="group" aria-label="View">
+          <button type="button" id="viewSheet">▦ Sheet</button>
+          <button type="button" id="viewCards">▤ Cards</button>
+        </div>
+        <span class="hint" id="sheetHint"></span>
+      </div>
       <input class="search" id="search" type="search" placeholder="Search a company, skill or area (e.g. games, AI, Mandaue)…" aria-label="Search companies">
       <div class="chips" id="typeChips" role="group" aria-label="Filter by company type"></div>
       <div class="chips" id="statusChips" role="group" aria-label="Filter by status"></div>
@@ -200,7 +239,13 @@ details.specs ul { margin: 8px 0 0; padding-left: 20px; font-size: 0.88rem; disp
   </div>
 
   <div class="wrap" id="view-posts" hidden>
-    <p class="hint">Internship posts found by your daily scan and the ones you added. Tick what you've applied to and add interview dates.</p>
+    <div class="viewbar">
+      <p class="hint" style="margin:0">Internship posts found by your daily scan and the ones you added.</p>
+      <div class="seg" role="group" aria-label="View">
+        <button type="button" id="viewSheet2">▦ Sheet</button>
+        <button type="button" id="viewCards2">▤ Cards</button>
+      </div>
+    </div>
     <div class="chips" id="postChips" role="group" aria-label="Filter posts"></div>
     <label class="hint" style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" id="hideBpo" checked> Hide BPO companies</label>
     <div id="postsStatus" class="note">Loading job posts…</div>
@@ -223,6 +268,8 @@ details.specs ul { margin: 8px 0 0; padding-left: 20px; font-size: 0.88rem; disp
   </div>
 </main>
 <div class="toast" id="toast" hidden></div>
+<div id="hovercard" hidden></div>
+<div id="overlay" hidden></div>
 
 <script>
 const STATUSES = [["to-apply","To apply"],["applied","Applied"],["interview","Interview"],["offer","Offer"],["rejected","Rejected"],["skip","Not interested"]];
@@ -258,10 +305,12 @@ let profile = {};
 const openCards = new Set();
 const letterMode = {};             // company id -> "email" | "letter"
 const confirmDelete = new Set();
-let ui = { tab: "companies", type: "all", status: "all", q: "", postFilter: "all" };
+let ui = { tab: "companies", type: "all", status: "all", q: "", postFilter: "all", view: "sheet" };
+let overlay = null;                // {kind: "company"|"post", id}
+const canHover = window.matchMedia ? window.matchMedia("(hover: hover) and (pointer: fine)").matches : false;
 try { Object.assign(ui, JSON.parse(localStorage.getItem("tracker-ui") || "{}")); } catch {}
 try { profile = JSON.parse(localStorage.getItem("tracker-profile") || "{}"); } catch {}
-const rememberUi = () => { try { localStorage.setItem("tracker-ui", JSON.stringify({ tab: ui.tab, type: ui.type, status: ui.status, postFilter: ui.postFilter, hideBpo: $("hideBpo").checked })); } catch {} };
+const rememberUi = () => { try { localStorage.setItem("tracker-ui", JSON.stringify({ tab: ui.tab, type: ui.type, status: ui.status, postFilter: ui.postFilter, view: ui.view, hideBpo: $("hideBpo").checked })); } catch {} };
 if (typeof ui.hideBpo === "boolean") $("hideBpo").checked = ui.hideBpo;
 
 // ---------------- saving (one write chain per doc)
@@ -388,11 +437,11 @@ function renderChips() {
     return el("button", { class: "chip", type: "button", "aria-pressed": String(ui.status === k), onclick: () => { ui.status = k; rememberUi(); renderCompanies(); } }, l, num != null && el("b", { text: String(num) }));
   }));
 }
-function companyCard(c) {
-  const open = openCards.has(c.id);
+function companyCard(c, inOverlay) {
+  const open = inOverlay || openCards.has(c.id);
   const status = STATUSES.find((s) => s[0] === c.status) || STATUSES[0];
   const card = el("article", { class: "card" + (c.status === "rejected" || c.status === "skip" ? " dim" : "") });
-  const toggle = () => { open ? openCards.delete(c.id) : openCards.add(c.id); renderCompanies(); };
+  const toggle = () => { if (inOverlay) return closeOverlay(); open ? openCards.delete(c.id) : openCards.add(c.id); renderCompanies(); };
   const head = el("div", { class: "head", onclick: (e) => { if (!e.target.closest("a,button")) toggle(); } },
     el("div", { class: "titlerow" },
       el("h2", { class: "name", text: c.name }),
@@ -437,7 +486,10 @@ function renderCompanies() {
     (ui.type === "all" || c.type === ui.type) &&
     (ui.status === "all" || (ui.status === "closed" ? c.status === "rejected" || c.status === "skip" : c.status === ui.status)) &&
     matchesQuery(c, ui.q)).sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99));
-  $("companyList").replaceChildren(...shown.map(companyCard));
+  document.body.classList.toggle("wide-mode", ui.view === "sheet");
+  $("sheetHint").textContent = ui.view === "sheet" ? (canHover ? "Hover a row to see details. Click a company name for the letter." : "Tap a company name to see details and the letter.") : "";
+  $("companyList").replaceChildren(...(ui.view === "sheet" ? [companySheet(shown)] : shown.map((c) => companyCard(c))));
+  renderOverlay();
   const s = $("companiesStatus");
   if (!db) return;
   if (!companies.length) { s.hidden = false; s.className = "note"; s.textContent = "No companies yet."; }
@@ -483,7 +535,8 @@ function renderPosts() {
   const order = { interview: 0, offer: 1, "to-apply": 2, applied: 3, rejected: 4, skip: 5 };
   const shown = base.filter((j) => ui.postFilter === "all" || j.status === ui.postFilter)
     .sort((a, b) => (order[a.status] ?? 2) - (order[b.status] ?? 2) || (a.rank ?? 99) - (b.rank ?? 99));
-  $("postList").replaceChildren(...shown.map(postCard));
+  $("postList").replaceChildren(...(ui.view === "sheet" ? [postSheet(shown)] : shown.map(postCard)));
+  renderOverlay();
   const s = $("postsStatus");
   if (!db) return;
   if (!posts.length) { s.hidden = false; s.className = "note"; s.textContent = "No job posts yet. Add one below."; }
@@ -497,15 +550,163 @@ function renderNext() {
   $("nextInterview").textContent = all[0] ? "Next interview: " + all[0].who + ", " + fmtWhen(all[0].at) : "";
 }
 
+// ---------------- sheet view
+const COL = (i) => { let s = ""; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+function sheetTable(cols, rows, onHover, onOpen) {
+  const letters = el("tr", {}, el("th", { class: "rn colletter" }), ...cols.map((c, i) => el("th", { class: "colletter" + (c.sticky ? " nm" : ""), text: COL(i) })));
+  const heads = el("tr", {}, el("th", { class: "rn", text: "" }), ...cols.map((c) => el("th", { class: c.sticky ? "nm" : "", text: c.label })));
+  const body = rows.map((r, i) => {
+    const tr = el("tr", { class: r.status === "rejected" || r.status === "skip" ? "dim" : "" },
+      el("td", { class: "rn", text: String(i + 1) }),
+      ...cols.map((c) => {
+        const v = c.cell(r);
+        const td = el("td", { class: [c.sticky ? "nm" : "", c.cls || ""].join(" ").trim() || null });
+        if (v instanceof Node) td.append(v); else { td.textContent = v == null ? "" : String(v); if (c.cls === "trunc") td.title = td.textContent; }
+        return td;
+      }));
+    // Pop-up follows a real mouse only; taps on phones open the full details instead.
+    tr.addEventListener("pointerenter", (e) => { if (e.pointerType !== "mouse") return; tr.classList.add("hl"); onHover(r, e); });
+    tr.addEventListener("pointermove", (e) => { if (e.pointerType === "mouse") placeHover(e); });
+    tr.addEventListener("pointerleave", (e) => { tr.classList.remove("hl"); hideHover(); });
+    return tr;
+  });
+  return el("div", { class: "sheetwrap" }, el("table", { class: "sheet" }, el("thead", {}, letters, heads), el("tbody", {}, body)));
+}
+function cellStatus(coll, list, r, rerender) {
+  return el("select", { "aria-label": "Status", disabled: !canWrite, onchange: (e) => { save(coll, list, r.id, statusPatch(r, e.target.value), null); rerender(); } },
+    STATUSES.map(([v, l]) => el("option", { value: v, selected: v === r.status, text: l })));
+}
+function cellApplied(coll, list, r, rerender) {
+  return el("input", { type: "checkbox", "aria-label": "I applied", checked: r.status !== "to-apply" && r.status !== "skip", disabled: !canWrite,
+    onchange: (e) => { save(coll, list, r.id, e.target.checked ? { status: r.status === "to-apply" || r.status === "skip" ? "applied" : r.status, appliedOn: r.appliedOn || today() } : { status: "to-apply", appliedOn: "" }, null); rerender(); } });
+}
+function cellDate(coll, list, r, field, type, rerender) {
+  return el("input", { type, value: r[field] || "", "aria-label": field === "appliedOn" ? "Applied on" : "Interview", disabled: !canWrite,
+    onchange: (e) => {
+      const p = { [field]: e.target.value };
+      if (field === "interviewAt" && e.target.value && ["to-apply", "applied"].includes(r.status)) { p.status = "interview"; if (!r.appliedOn) p.appliedOn = today(); }
+      save(coll, list, r.id, p, null); rerender();
+    } });
+}
+function cellNotes(coll, list, r) {
+  const i = el("input", { class: "notes", value: r.notes || "", placeholder: "Add a note…", "aria-label": "Notes", disabled: !canWrite });
+  i.addEventListener("change", () => save(coll, list, r.id, { notes: i.value }, null));
+  return i;
+}
+function companySheet(list) {
+  const rr = renderCompanies;
+  const cols = [
+    { label: "Company", sticky: true, cell: (c) => el("button", { class: "linkbtn", type: "button", title: c.name, onclick: () => openOverlay("company", c.id) }, c.name) },
+    { label: "Type", cell: (c) => el("span", { class: "pill " + c.type, text: TYPE_LABEL[c.type] || "Not verified" }) },
+    { label: "Status", cell: (c) => cellStatus("companies", companies, c, rr) },
+    { label: "Applied", cls: "c", cell: (c) => cellApplied("companies", companies, c, rr) },
+    { label: "Applied on", cell: (c) => cellDate("companies", companies, c, "appliedOn", "date", rr) },
+    { label: "Interview", cell: (c) => cellDate("companies", companies, c, "interviewAt", "datetime-local", rr) },
+    { label: "Area", cell: (c) => c.area },
+    { label: "What they do", cls: "trunc", cell: (c) => c.what },
+    { label: "Good for", cls: "trunc", cell: (c) => (c.tags || []).join(", ") },
+    { label: "Contact person", cell: (c) => c.contactName },
+    { label: "Position", cls: "trunc", cell: (c) => c.contactTitle },
+    { label: "Phone", cell: (c) => (c.phones || []).join(" / ") },
+    { label: "Email", cell: (c) => (c.emails || []).join(" / ") },
+    { label: "MOA valid until", cell: (c) => c.moaValidUntil || "—" },
+    { label: "Notes", cell: (c) => cellNotes("companies", companies, c) },
+  ];
+  return sheetTable(cols, list, (c, e) => showHover(companyHover(c), e), (c) => openOverlay("company", c.id));
+}
+function postSheet(list) {
+  const rr = renderPosts;
+  const cols = [
+    { label: "Role", sticky: true, cell: (j) => el("button", { class: "linkbtn", type: "button", title: j.role, onclick: () => openOverlay("post", j.id) }, j.role || "Untitled role") },
+    { label: "Company", cell: (j) => j.company },
+    { label: "Type", cell: (j) => el("span", { class: "pill " + (j.companyType || "unclear"), text: TYPE_LABEL[j.companyType] || "Not verified" }) },
+    { label: "Status", cell: (j) => cellStatus("internships", posts, j, rr) },
+    { label: "Applied", cls: "c", cell: (j) => cellApplied("internships", posts, j, rr) },
+    { label: "Applied on", cell: (j) => cellDate("internships", posts, j, "appliedOn", "date", rr) },
+    { label: "Interview", cell: (j) => cellDate("internships", posts, j, "interviewAt", "datetime-local", rr) },
+    { label: "Location", cls: "trunc", cell: (j) => j.location },
+    { label: "Posted", cell: (j) => fmtDate(j.posted) },
+    { label: "Source", cell: (j) => j.source },
+    { label: "Link", cell: (j) => safeUrl(j.url) ? el("a", { href: safeUrl(j.url), target: "_blank", rel: "noopener" }, "Open ↗") : "" },
+    { label: "Notes", cell: (j) => cellNotes("internships", posts, j) },
+  ];
+  return sheetTable(cols, list, (j, e) => showHover(postHover(j), e), (j) => openOverlay("post", j.id));
+}
+
+// ---------------- hover card
+function hoverLine(label, value) { return value ? el("div", {}, el("b", { text: label + ": " }), value) : null; }
+function companyHover(c) {
+  return [
+    el("h4", { text: c.name }),
+    el("div", { class: "pills" }, el("span", { class: "pill " + c.type, text: TYPE_LABEL[c.type] || "Not verified" }), el("span", { class: "tag", text: c.category })),
+    el("div", { text: c.what }),
+    c.flag && el("div", { class: "flag", text: "⚠ " + c.flag }),
+    c.tip && el("div", { class: "tip", text: "💡 " + c.tip }),
+    hoverLine("Good for", (c.tags || []).join(", ")),
+    hoverLine("Address", c.address),
+    hoverLine("Contact", c.contactName + " — " + c.contactTitle),
+    hoverLine("Phone", (c.phones || []).join(" / ")),
+    hoverLine("Email", (c.emails || []).join(" / ")),
+    hoverLine("Website", safeUrl(c.website) ? c.website.replace(/^https:\/\/(www\.)?/, "") : ""),
+    hoverLine("School MOA", "since " + c.moaSince + (c.moaValidUntil ? ", valid until " + c.moaValidUntil : "")),
+    c.notes && hoverLine("Your notes", c.notes),
+    el("p", { class: "hint", text: "Click the company name for the application letter." }),
+  ];
+}
+function postHover(j) {
+  return [
+    el("h4", { text: j.role }),
+    el("div", { text: j.company + (j.location ? " · " + j.location : "") }),
+    j.about && el("div", { text: j.about }),
+    j.flag && el("div", { class: "flag", text: "⚠ " + j.flag }),
+    Array.isArray(j.specs) && j.specs.length > 0 && el("div", {}, el("b", { text: "What they want: " }), j.specs.slice(0, 4).join(" · ")),
+    j.notes && hoverLine("Your notes", j.notes),
+    el("p", { class: "hint", text: "Click the role for the full post." }),
+  ];
+}
+function showHover(nodes, e) { const h = $("hovercard"); h.replaceChildren(...nodes.filter(Boolean)); h.hidden = false; placeHover(e); }
+function hideHover() { $("hovercard").hidden = true; }
+function placeHover(e) {
+  const h = $("hovercard"); if (h.hidden) return;
+  const pad = 14, w = h.offsetWidth, ht = h.offsetHeight;
+  let x = e.clientX + pad, y = e.clientY + pad;
+  if (x + w > window.innerWidth - 8) x = Math.max(8, e.clientX - w - pad);
+  if (y + ht > window.innerHeight - 8) y = Math.max(8, window.innerHeight - ht - 8);
+  h.style.left = x + "px"; h.style.top = y + "px";
+}
+
+// ---------------- detail overlay (click a name in the sheet)
+function openOverlay(kind, id) { hideHover(); overlay = { kind, id }; renderOverlay(); }
+function closeOverlay() { overlay = null; renderOverlay(); }
+function renderOverlay() {
+  const o = $("overlay");
+  const item = overlay && (overlay.kind === "company" ? companies : posts).find((x) => x.id === overlay.id);
+  if (!item) { o.hidden = true; o.replaceChildren(); document.body.style.overflow = ""; return; }
+  o.replaceChildren(el("div", { class: "sheetcard" },
+    el("div", { class: "closebar" }, el("button", { class: "btn", type: "button", onclick: closeOverlay }, "✕ Close")),
+    overlay.kind === "company" ? companyCard(item, true) : postCard(item)));
+  o.hidden = false; document.body.style.overflow = "hidden";
+}
+$("overlay").addEventListener("click", (e) => { if (e.target.id === "overlay") closeOverlay(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && overlay) closeOverlay(); });
+
+// ---------------- view toggle
+function setView(v) {
+  ui.view = v; rememberUi();
+  for (const [id, val] of [["viewSheet", "sheet"], ["viewCards", "cards"], ["viewSheet2", "sheet"], ["viewCards2", "cards"]]) $(id).setAttribute("aria-pressed", String(v === val));
+  renderCompanies(); renderPosts();
+}
+for (const [id, val] of [["viewSheet", "sheet"], ["viewCards", "cards"], ["viewSheet2", "sheet"], ["viewCards2", "cards"]]) $(id).addEventListener("click", () => setView(val));
+
 // Don't rebuild a list while the viewer is typing in it; redraw once they leave the field.
 let deferred = null;
 function whenIdle(fn) {
   const a = document.activeElement;
-  if (a && a.matches("input, textarea, select") && a.closest("#companyList, #postList")) { deferred = fn; return; }
+  if (a && a.matches("input, textarea, select") && a.closest("#companyList, #postList, #overlay")) { deferred = fn; return; }
   fn();
 }
 document.addEventListener("focusout", () => setTimeout(() => {
-  if (deferred && !(document.activeElement && document.activeElement.closest("#companyList, #postList") && document.activeElement.matches("input, textarea, select"))) { const f = deferred; deferred = null; f(); }
+  if (deferred && !(document.activeElement && document.activeElement.closest("#companyList, #postList, #overlay") && document.activeElement.matches("input, textarea, select"))) { const f = deferred; deferred = null; f(); }
 }, 0));
 
 // ---------------- tabs
@@ -563,6 +764,8 @@ $("addForm").addEventListener("submit", async (e) => {
 
 // ---------------- boot
 showTab(ui.tab === "posts" ? "posts" : "companies");
+if (ui.view !== "cards") ui.view = "sheet";
+for (const [id, val] of [["viewSheet", "sheet"], ["viewCards", "cards"], ["viewSheet2", "sheet"], ["viewCards2", "cards"]]) $(id).setAttribute("aria-pressed", String(ui.view === val));
 fillProfileForm();
 if (!profileState()) $("profileBox").open = true;
 renderCompanies(); renderPosts();
