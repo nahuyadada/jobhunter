@@ -5,10 +5,11 @@ This file is what the daily scheduled task follows. Do these steps in order.
 1. From the repository root run:
 
    ```
-   python3 scan.py --json > /tmp/scan.json
+   python3 scan.py --json --state data/seen.json > /tmp/scan.json
    ```
 
-   It needs nothing installed. If it fails, run it once more; if it still fails,
+   `data/seen.json` lists postings already reported or already in the tracker, so they
+   are skipped. It needs nothing installed. If it fails, run it once more; if it still fails,
    report the error as the day's message.
 
 2. Read `/tmp/scan.json`. For each entry in `matches`, decide whether it really
@@ -24,6 +25,10 @@ This file is what the daily scheduled task follows. Do these steps in order.
    repost sites such as Trabajo.org or Jobrapido, from a company with no real web
    presence or an odd name, with a clickbait title ("Ship Real Code"), or "remote"
    but tagged to Cebu. Drop obvious spam; otherwise add "⚠️ check this company is real".
+
+   **Postings with `"undated": true`** had no posting date on any site, so they may be
+   months old. Never put them in the main list. Put them in a short last section,
+   "📅 Date not confirmed — check before applying", one line each with the link.
 
 3. Reply with the day's report as your final message, in this format, and nothing else:
 

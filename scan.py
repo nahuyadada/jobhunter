@@ -60,10 +60,13 @@ class Job:
     remote: bool = False
     snippet: str = ""
     tags: list[str] = field(default_factory=list)
+    undated: bool = False  # the site gave no posting date, so it may be old
 
     @property
     def key(self) -> str:
-        norm = lambda s: re.sub(r"[^a-z0-9]+", " ", s.lower()).strip()
+        norm = lambda s: re.sub(r"\b(inc|corp|corporation|co|ltd|llc|opc|incorporated)\b", "",
+                                re.sub(r"[^a-z0-9]+", " ", s.lower())).split()
+        norm = (lambda f: lambda s: " ".join(f(s)))(norm)
         return f"{norm(self.title)}|{norm(self.company)}"
 
 
@@ -289,6 +292,34 @@ def src_google_jobs(cfg, hours):
     return jobs
 
 
+def src_pythonph(cfg, hours):
+    """PythonPH community jobs board (python.ph/jobs). Lists real posting dates."""
+    jobs = []
+    for page in (1, 2, 3):
+        body = fetch(f"https://python.ph/jobs/?page={page}")
+        cards = re.findall(r"<article\b.*?</article>", body, re.S)
+        if not cards:
+            break
+        for c in cards:
+            g = lambda pat: (m.group(1) if (m := re.search(pat, c, re.S)) else "")
+            title = strip_tags(g(r'<h2[^>]*>.*?<a[^>]*>(.*?)</a>'))
+            path = g(r'<h2[^>]*>.*?<a href="(/jobs/job/\d+/)"')
+            company = strip_tags(g(r'</h2>\s*<p[^>]*>(.*?)</p>'))
+            badges = [strip_tags(b) for b in re.findall(r'class="badge badge-outline[^"]*">(.*?)</span>', c, re.S)]
+            location = badges[0] if badges else ""
+            posted = g(r"Posted ([A-Z][a-z]{2} \d{1,2}, \d{4})")
+            try:
+                posted = datetime.strptime(posted, "%b %d, %Y").date().isoformat() if posted else ""
+            except ValueError:
+                posted = ""
+            if title and path:
+                jobs.append(Job(title, company, location, "https://python.ph" + path, "PythonPH", posted,
+                                remote=any("work from home" in b.lower() or "remote" in b.lower() for b in badges),
+                                snippet=strip_tags(g(r'<p class="m-0 mt-3[^"]*">(.*?)</p>'))[:240]))
+        time.sleep(0.5)
+    return jobs
+
+
 SOURCES = {
     "LinkedIn": src_linkedin,
     "JobStreet": src_jobstreet,
@@ -298,6 +329,7 @@ SOURCES = {
     "Ashby": src_ashby,
     "Greenhouse": src_greenhouse,
     "Google": src_google_jobs,
+    "PythonPH": src_pythonph,
 }
 
 # ---------------------------------------------------------------- filtering
@@ -334,9 +366,15 @@ def keep(job: Job, cfg, hours: float) -> bool:
     if not location_ok(job, cfg):
         return False
     t = parse_time(job.posted)
-    # Date-only values (LinkedIn) can't be checked to the hour; LinkedIn's own
-    # time filter already limited those results to the window.
-    if t is not None and len(job.posted) > 10 and NOW - t > timedelta(hours=hours):
+    if t is None:
+        job.undated = True  # kept, but reported separately as "date not confirmed"
+    elif len(job.posted) == 10:
+        # Date-only values: compare whole days (PH calendar), allowing the current day.
+        days = max(1, math.ceil(hours / 24))
+        today_ph = NOW.astimezone(timezone(timedelta(hours=8))).date()
+        if (today_ph - t.date()).days > days:
+            return False
+    elif NOW - t > timedelta(hours=hours):
         return False
     return True
 
@@ -353,6 +391,17 @@ def scan(cfg, hours: float, only: list[str] | None = None):
             found += fn(cfg, hours)
         except Exception as e:  # one broken site must not stop the others
             errors[name] = f"{type(e).__name__}: {e}"
+    # If one site gives no date but another lists the same posting with a date,
+    # use that date, so an old posting can't pass as new just because it's undated.
+    dated = {}
+    for j in found:
+        if parse_time(j.posted) is not None:
+            prev = dated.get(j.key)
+            if prev is None or (parse_time(j.posted) < parse_time(prev)):
+                dated[j.key] = j.posted
+    for j in found:
+        if parse_time(j.posted) is None and j.key in dated:
+            j.posted = dated[j.key]
     seen, matches = set(), []
     for j in found:
         if j.key in seen or not keep(j, cfg, hours):
@@ -368,9 +417,10 @@ def to_markdown(matches: list[Job], errors: dict, scanned: int, hours: float) ->
     out.append(f"{len(matches)} new match(es) from {scanned} postings scanned (last {hours:g}h).")
     out.append("")
     for j in matches:
-        when = (parse_time(j.posted) or NOW).astimezone(timezone(timedelta(hours=8))).strftime("%d %b")
+        t = parse_time(j.posted)
+        when = f"posted {t.astimezone(timezone(timedelta(hours=8))):%d %b}" if t else "⚠️ posting date unknown"
         out.append(f"- **{j.title}** — {j.company} · {j.location}{' · remote' if j.remote else ''} "
-                   f"· {j.source}, posted {when}\n  {j.url}")
+                   f"· {j.source}, {when}\n  {j.url}")
     if errors:
         out += ["", "Sources that failed this run:"] + [f"- {k}: {v}" for k, v in errors.items()]
     return "\n".join(out)
