@@ -1,36 +1,30 @@
 <title>Cebu Internship Tracker</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=Source+Serif+4:wght@400;600&display=swap">
 <style>
-/* Layout: one column of posting cards under a sticky status bar; each card = posting facts on top, your tracking row underneath. */
+/* Layout: sticky header with two tabs (partner companies / job posts); one column of cards that expand in place to show details, tracking and a ready-made letter. */
 :root {
-  --bg: #f3f6f7;
-  --surface: #ffffff;
-  --fg: #14232b;
-  --muted: #5b6b73;
-  --line: #d9e2e6;
-  --accent: #0e7c86;
-  --accent-ink: #ffffff;
-  --accent-soft: #e0f1f2;
-  --good: #1d7a46; --good-soft: #e2f3e8;
-  --warn: #9a6200; --warn-soft: #fbf0d9;
-  --bad: #b3261e;  --bad-soft: #fbe5e3;
-  --info: #3b4fb8; --info-soft: #e6e9fa;
+  --bg: #f3f6f7; --surface: #ffffff; --sunken: #eef3f4; --fg: #14232b; --muted: #5b6b73; --line: #d9e2e6;
+  --accent: #0e7c86; --accent-ink: #ffffff; --accent-soft: #e0f1f2;
+  --good: #1d7a46; --good-soft: #e2f3e8; --warn: #9a6200; --warn-soft: #fbf0d9;
+  --bad: #b3261e; --bad-soft: #fbe5e3; --info: #3b4fb8; --info-soft: #e6e9fa;
+  --paper: #fffdf8; --paper-line: #e7e1d3;
   --display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
   --body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --letter: "Source Serif 4", Georgia, "Times New Roman", serif;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #0e1619; --surface: #162227; --fg: #e4ecef; --muted: #93a5ad; --line: #2a3a41;
+  --bg: #0e1619; --surface: #162227; --sunken: #111c20; --fg: #e4ecef; --muted: #93a5ad; --line: #2a3a41;
   --accent: #3cb8c2; --accent-ink: #06272a; --accent-soft: #173a3e;
   --good: #6fd19a; --good-soft: #17352a; --warn: #f0b75a; --warn-soft: #3a2c12;
   --bad: #f28b82; --bad-soft: #3d1f1d; --info: #a5b2ff; --info-soft: #232a4d;
-  color-scheme: dark; } }
+  --paper: #1b2529; --paper-line: #33434a; color-scheme: dark; } }
 :root[data-theme="dark"] {
-  --bg: #0e1619; --surface: #162227; --fg: #e4ecef; --muted: #93a5ad; --line: #2a3a41;
+  --bg: #0e1619; --surface: #162227; --sunken: #111c20; --fg: #e4ecef; --muted: #93a5ad; --line: #2a3a41;
   --accent: #3cb8c2; --accent-ink: #06272a; --accent-soft: #173a3e;
   --good: #6fd19a; --good-soft: #17352a; --warn: #f0b75a; --warn-soft: #3a2c12;
   --bad: #f28b82; --bad-soft: #3d1f1d; --info: #a5b2ff; --info-soft: #232a4d;
-  color-scheme: dark; }
+  --paper: #1b2529; --paper-line: #33434a; color-scheme: dark; }
 
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; }
@@ -38,31 +32,56 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 a { color: var(--accent); }
 button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-.wrap { max-width: 760px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 820px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 
 header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
-header.top .wrap { padding-block: 14px 12px; display: grid; gap: 10px; }
-h1 { font-family: var(--display); font-size: 1.35rem; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
-.sub { color: var(--muted); font-size: 0.85rem; margin: 2px 0 0; }
-.counts { display: flex; flex-wrap: wrap; gap: 8px; }
-.count { display: flex; align-items: baseline; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); font-size: 0.85rem; cursor: pointer; }
-.count b { font-family: var(--display); font-size: 1rem; font-variant-numeric: tabular-nums; }
-.count[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-.tools { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; font-size: 0.85rem; color: var(--muted); }
-.tools label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
-.next { font-size: 0.85rem; color: var(--info); font-weight: 500; }
+header.top .wrap { padding-block: 12px 0; display: grid; gap: 8px; }
+h1 { font-family: var(--display); font-size: 1.3rem; margin: 0; letter-spacing: -0.01em; }
+.next { font-size: 0.82rem; color: var(--info); font-weight: 500; }
+.tabs { display: flex; gap: 4px; }
+.tab { border: 0; background: none; padding: 10px 12px; font-weight: 600; color: var(--muted); border-bottom: 3px solid transparent; cursor: pointer; font-size: 0.92rem; }
+.tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+.tab b { font-family: var(--display); font-variant-numeric: tabular-nums; margin-left: 4px; }
 
-main .wrap { padding-block: 16px 48px; display: grid; gap: 14px; }
+main .wrap { padding-block: 16px 56px; display: grid; gap: 14px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.panel > summary { padding: 12px 16px; cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center; gap: 8px; list-style: none; }
+.panel > summary::-webkit-details-marker { display: none; }
+.panel > summary::after { content: "▾"; color: var(--muted); transition: transform .15s; }
+.panel[open] > summary::after { transform: rotate(180deg); }
+.panel .inner { padding: 0 16px 16px; display: grid; gap: 12px; }
+.hint { font-size: 0.85rem; color: var(--muted); margin: 0; }
 .note { font-size: 0.85rem; color: var(--muted); padding: 10px 12px; border: 1px dashed var(--line); border-radius: 8px; }
 .note.err { color: var(--bad); border-color: var(--bad); }
+.done-chip { font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--good-soft); color: var(--good); }
+.todo-chip { font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); }
+
+.formgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px 14px; }
+.field { display: grid; gap: 4px; font-size: 0.74rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; min-width: 0; }
+.field input, .field select, .field textarea { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 0.92rem; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; width: 100%; min-width: 0; }
+.field textarea { resize: vertical; min-height: 40px; }
+.field.wide { grid-column: 1 / -1; }
+
+ol.steps { margin: 0; padding-left: 22px; display: grid; gap: 8px; font-size: 0.9rem; }
+ol.steps b { font-weight: 600; }
+
+.toolbar { display: grid; gap: 10px; }
+.search { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-size: 0.95rem; }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; border: 1px solid var(--line); background: var(--surface); padding: 5px 12px; border-radius: 999px; font-size: 0.83rem; cursor: pointer; white-space: nowrap; }
+.chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.chip b { font-variant-numeric: tabular-nums; margin-left: 3px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.8rem; color: var(--muted); align-items: center; }
 
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
 .card.dim { opacity: 0.62; }
-.card .head { padding: 14px 16px 10px; display: grid; gap: 6px; }
-.role { font-family: var(--display); font-size: 1.08rem; font-weight: 600; margin: 0; text-wrap: balance; }
-.co { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-weight: 500; }
-.pill { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.card .head { padding: 14px 16px 12px; display: grid; gap: 6px; cursor: pointer; }
+main .wrap > *, #companyList > *, #postList > *, .card .head, .detail > * { min-width: 0; }
+.titlerow { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+.name { font-family: var(--display); font-size: 1.06rem; font-weight: 600; margin: 0; text-wrap: balance; min-width: 0; overflow-wrap: anywhere; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pill { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
 .pill.product { background: var(--good-soft); color: var(--good); }
 .pill.bpo { background: var(--bad-soft); color: var(--bad); }
 .pill.unclear { background: var(--warn-soft); color: var(--warn); }
@@ -70,85 +89,144 @@ main .wrap { padding-block: 16px 48px; display: grid; gap: 14px; }
 .pill.st-applied { background: var(--info-soft); color: var(--info); }
 .pill.st-interview { background: var(--warn-soft); color: var(--warn); }
 .pill.st-offer { background: var(--good-soft); color: var(--good); }
-.pill.st-rejected, .pill.st-skip { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
-.meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.83rem; color: var(--muted); }
-.meta span { white-space: nowrap; }
-.body { padding: 0 16px 12px; display: grid; gap: 10px; min-width: 0; }
-.about { margin: 0; font-size: 0.9rem; }
-.flag { font-size: 0.85rem; background: var(--warn-soft); color: var(--warn); border-radius: 6px; padding: 6px 10px; }
-details.specs summary { cursor: pointer; font-weight: 600; font-size: 0.85rem; color: var(--accent); }
-details.specs ul { margin: 8px 0 0; padding-left: 20px; font-size: 0.88rem; display: grid; gap: 3px; }
-.links { display: flex; flex-wrap: wrap; gap: 8px; }
-.btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 7px; border: 1px solid var(--line); background: var(--surface); text-decoration: none; color: var(--fg); font-size: 0.85rem; font-weight: 500; cursor: pointer; }
+.pill.st-rejected, .pill.st-skip { background: var(--sunken); color: var(--muted); border: 1px solid var(--line); }
+.meta { display: flex; flex-wrap: wrap; gap: 2px 14px; font-size: 0.83rem; color: var(--muted); }
+.what { margin: 0; font-size: 0.9rem; }
+.tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.tag { font-size: 0.75rem; padding: 1px 8px; border-radius: 5px; background: var(--sunken); color: var(--muted); border: 1px solid var(--line); }
+.toggle { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 7px; padding: 5px 10px; font-size: 0.8rem; font-weight: 600; color: var(--accent); cursor: pointer; white-space: nowrap; }
+
+.detail { border-top: 1px solid var(--line); padding: 14px 16px 16px; display: grid; gap: 14px; min-width: 0; }
+.flag { font-size: 0.86rem; background: var(--warn-soft); color: var(--warn); border-radius: 7px; padding: 8px 10px; }
+.tip { font-size: 0.86rem; background: var(--accent-soft); color: var(--accent); border-radius: 7px; padding: 8px 10px; }
+.sec { display: grid; gap: 8px; min-width: 0; }
+.sec h3 { margin: 0; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+dl.info { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; font-size: 0.9rem; }
+dl.info dt { color: var(--muted); }
+dl.info dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.copyable { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.mini { border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 1px 8px; font-size: 0.75rem; cursor: pointer; color: var(--accent); font-weight: 600; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 7px; border: 1px solid var(--line); background: var(--surface); text-decoration: none; color: var(--fg); font-size: 0.85rem; font-weight: 500; cursor: pointer; }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .btn.danger { color: var(--bad); border-color: var(--bad); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 
-.track { border-top: 1px solid var(--line); background: var(--bg); padding: 12px 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px 14px; align-items: end; }
-.field { display: grid; gap: 4px; font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; min-width: 0; }
-.field input, .field select, .field textarea { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 0.9rem; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 7px; padding: 7px 9px; width: 100%; min-width: 0; }
-.field textarea { resize: vertical; min-height: 38px; }
-.field.wide { grid-column: 1 / -1; }
+.track { background: var(--sunken); border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px 14px; align-items: end; }
 .check { display: flex; align-items: center; gap: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; padding-block: 6px; }
 .check input { width: 20px; height: 20px; accent-color: var(--accent); }
 .saved { font-size: 0.75rem; color: var(--muted); grid-column: 1 / -1; min-height: 1em; }
 
-.add { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
-.add summary { padding: 12px 16px; cursor: pointer; font-weight: 600; color: var(--accent); }
-.add form { padding: 0 16px 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px 14px; }
-@media (prefers-reduced-motion: no-preference) { .card { transition: opacity .2s; } }
+.lettertabs { display: flex; gap: 6px; }
+.paper { background: var(--paper); border: 1px solid var(--paper-line); border-radius: 8px; padding: 18px 18px; font-family: var(--letter); font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 520px; overflow-y: auto; }
+.paper .ph { background: var(--warn-soft); color: var(--warn); border-radius: 3px; padding: 0 3px; font-family: var(--body); font-size: 0.85em; }
+.subject { font-family: var(--body); font-size: 0.85rem; background: var(--sunken); border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; overflow-wrap: anywhere; }
+
+.post .body { padding: 0 16px 12px; display: grid; gap: 10px; }
+.post .track { margin: 0 16px 14px; }
+details.specs summary { cursor: pointer; font-weight: 600; font-size: 0.85rem; color: var(--accent); }
+details.specs ul { margin: 8px 0 0; padding-left: 20px; font-size: 0.88rem; display: grid; gap: 3px; }
+
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; z-index: 20; }
+@media (prefers-reduced-motion: reduce) { .panel > summary::after { transition: none; } }
 </style>
 
 <header class="top">
   <div class="wrap">
-    <div>
+    <div class="row" style="justify-content:space-between">
       <h1>Cebu Internship Tracker</h1>
-      <p class="sub">Tech internships around Cebu City. Tick what you've applied to and add interview dates.</p>
-    </div>
-    <div class="counts" id="counts" role="group" aria-label="Filter by status"></div>
-    <div class="tools">
-      <label><input type="checkbox" id="hideBpo" checked> Hide BPO companies</label>
-      <label><input type="checkbox" id="hideClosed"> Hide rejected &amp; skipped</label>
       <span class="next" id="nextInterview"></span>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tab-companies" aria-selected="true" type="button">Partner companies<b id="countCompanies">38</b></button>
+      <button class="tab" role="tab" id="tab-posts" aria-selected="false" type="button">Job posts<b id="countPosts">0</b></button>
     </div>
   </div>
 </header>
 
 <main>
-  <div class="wrap">
-    <div id="status" class="note">Loading your internships…</div>
-    <div id="list" style="display:grid;gap:14px"></div>
+  <div class="wrap" id="view-companies">
+    <details class="panel" id="profileBox">
+      <summary><span>1. Your details for the letters <span id="profileState"></span></span></summary>
+      <div class="inner">
+        <p class="hint">Fill this in once. Every company's application letter fills in your details automatically. Saved to your account.</p>
+        <form class="formgrid" id="profileForm">
+          <label class="field">Full name<input id="pName" autocomplete="name" placeholder="Juan Dela Cruz"></label>
+          <label class="field">Course
+            <select id="pCourse"><option value="">Choose…</option><option>BS Information Technology</option><option>BS Computer Science</option><option>BS Information Systems</option><option>BS Computer Engineering</option></select>
+          </label>
+          <label class="field">Year level
+            <select id="pYear"><option value="">Choose…</option><option>third-year</option><option>fourth-year</option><option>graduating</option></select>
+          </label>
+          <label class="field">School<input id="pSchool" placeholder="e.g. Cebu Institute of Technology – University"></label>
+          <label class="field">Required OJT hours<input id="pHours" inputmode="numeric" placeholder="e.g. 486"></label>
+          <label class="field">Available to start<input id="pStart" type="date"></label>
+          <label class="field">Mobile number<input id="pPhone" inputmode="tel" autocomplete="tel" placeholder="0917 123 4567"></label>
+          <label class="field">Email<input id="pEmail" type="email" autocomplete="email" placeholder="you@email.com"></label>
+          <label class="field wide">Skills to mention<input id="pSkills" placeholder="e.g. Python, Java, HTML/CSS/JavaScript, SQL, and setting up computer networks"></label>
+          <label class="field wide">A project you're proud of (optional)<input id="pProject" placeholder="e.g. a student enrollment system for our capstone, built with Laravel and MySQL"></label>
+        </form>
+        <p class="hint" id="profileSaved"></p>
+      </div>
+    </details>
 
-    <details class="add" id="addBox">
-      <summary>+ Add an internship you found yourself</summary>
-      <form id="addForm">
-        <label class="field">Role<input id="addRole" required placeholder="e.g. Web Developer Intern"></label>
-        <label class="field">Company<input id="addCompany" required placeholder="Company name"></label>
-        <label class="field">Location<input id="addLocation" placeholder="Cebu City"></label>
-        <label class="field">Link to posting<input id="addUrl" type="url" placeholder="https://…"></label>
-        <label class="field">Company type
-          <select id="addType"><option value="product">Product / tech company</option><option value="unclear">Not sure</option><option value="bpo">BPO</option></select>
-        </label>
-        <div style="display:flex;align-items:end"><button class="btn primary" type="submit">Add internship</button></div>
-      </form>
+    <details class="panel" id="howBox">
+      <summary><span>2. How to apply to these companies</span></summary>
+      <div class="inner">
+        <p class="hint">All of these companies have an active agreement (MOA) with your school for BSCS/BSIT OJT, so the school route is the fastest.</p>
+        <ol class="steps">
+          <li><b>Talk to your OJT coordinator first.</b> Tell them which companies you're applying to and ask for an <b>endorsement letter</b> for each.</li>
+          <li><b>Prepare your files:</b> a one-page résumé (PDF), the endorsement letter, and the application letter from this page. Name files like <b>DelaCruz_Resume.pdf</b>.</li>
+          <li><b>Send it to the contact person</b> shown on each company's card. Use the email version of the letter. If there's no email, call the number or bring printed copies to the office on a weekday morning.</li>
+          <li><b>Track it here:</b> tick "I applied". If they call you, add the interview date and time.</li>
+          <li><b>Follow up after 5–7 working days</b> with a short, polite message if you haven't heard back.</li>
+          <li><b>Apply to 5–8 companies at once.</b> Small companies take fewer interns, so don't wait on one reply.</li>
+        </ol>
+      </div>
+    </details>
+
+    <div class="toolbar">
+      <input class="search" id="search" type="search" placeholder="Search a company, skill or area (e.g. games, AI, Mandaue)…" aria-label="Search companies">
+      <div class="chips" id="typeChips" role="group" aria-label="Filter by company type"></div>
+      <div class="chips" id="statusChips" role="group" aria-label="Filter by status"></div>
+      <div class="legend">
+        <span><span class="pill product">Tech company</span> builds software or IT</span>
+        <span><span class="pill unclear">Not verified</span> little info online</span>
+        <span><span class="pill bpo">BPO-type</span> outsourcing / VA</span>
+      </div>
+    </div>
+
+    <div id="companiesStatus" class="note">Loading companies…</div>
+    <div id="companyList" style="display:grid;gap:12px"></div>
+  </div>
+
+  <div class="wrap" id="view-posts" hidden>
+    <p class="hint">Internship posts found by your daily scan and the ones you added. Tick what you've applied to and add interview dates.</p>
+    <div class="chips" id="postChips" role="group" aria-label="Filter posts"></div>
+    <label class="hint" style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" id="hideBpo" checked> Hide BPO companies</label>
+    <div id="postsStatus" class="note">Loading job posts…</div>
+    <div id="postList" style="display:grid;gap:12px"></div>
+    <details class="panel" id="addBox">
+      <summary><span>+ Add a job post you found yourself</span></summary>
+      <div class="inner">
+        <form class="formgrid" id="addForm">
+          <label class="field">Role<input id="addRole" required placeholder="e.g. Web Developer Intern"></label>
+          <label class="field">Company<input id="addCompany" required placeholder="Company name"></label>
+          <label class="field">Location<input id="addLocation" placeholder="Cebu City"></label>
+          <label class="field">Link to posting<input id="addUrl" type="url" placeholder="https://…"></label>
+          <label class="field">Company type
+            <select id="addType"><option value="product">Tech company</option><option value="unclear">Not sure</option><option value="bpo">BPO</option></select>
+          </label>
+          <div style="display:flex;align-items:end"><button class="btn primary" type="submit">Add post</button></div>
+        </form>
+      </div>
     </details>
   </div>
 </main>
+<div class="toast" id="toast" hidden></div>
 
 <script>
-const STATUSES = [
-  ["to-apply", "To apply"], ["applied", "Applied"], ["interview", "Interview"],
-  ["offer", "Offer"], ["rejected", "Rejected"], ["skip", "Not interested"],
-];
-const TYPE_LABEL = { product: "Product company", bpo: "BPO", unclear: "Unverified" };
-const COLL = "internships";
-
-let jobs = [];          // [{id, ...data}]
-let filter = "all";
-let col = null;         // db collection ref
-let canWrite = true;
-const pending = {};     // per-doc write chain
-const confirmDelete = new Set();
-
+const STATUSES = [["to-apply","To apply"],["applied","Applied"],["interview","Interview"],["offer","Offer"],["rejected","Rejected"],["skip","Not interested"]];
+const TYPE_LABEL = { product: "Tech company", bpo: "BPO-type", unclear: "Not verified" };
 const $ = (id) => document.getElementById(id);
 function el(tag, attrs = {}, ...kids) {
   const n = document.createElement(tag);
@@ -159,204 +237,361 @@ function el(tag, attrs = {}, ...kids) {
     else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
     else n.setAttribute(k, v === true ? "" : v);
   }
-  for (const k of kids.flat()) if (k != null) n.append(k);
+  for (const k of kids.flat()) if (k != null && k !== false) n.append(k);
   return n;
 }
 const safeUrl = (u) => (typeof u === "string" && u.startsWith("https://") ? u : null);
 const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
-function fmtDate(d) {
-  if (!d) return "";
-  const dt = new Date(d.length === 10 ? d + "T00:00:00" : d);
-  if (isNaN(dt)) return d;
-  return dt.toLocaleDateString("en-PH", { day: "numeric", month: "short", year: dt.getFullYear() !== new Date().getFullYear() ? "numeric" : undefined });
-}
-function fmtWhen(d) {
-  const dt = new Date(d);
-  if (isNaN(dt)) return d;
-  return dt.toLocaleString("en-PH", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+const longDate = (d) => { const dt = d ? new Date(d + "T00:00:00") : new Date(); return isNaN(dt) ? d : dt.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }); };
+function fmtDate(d) { if (!d) return ""; const dt = new Date(d.length === 10 ? d + "T00:00:00" : d); return isNaN(dt) ? d : dt.toLocaleDateString("en-PH", { day: "numeric", month: "short", year: "numeric" }); }
+function fmtWhen(d) { const dt = new Date(d); return isNaN(dt) ? d : dt.toLocaleString("en-PH", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }); }
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => (t.hidden = true), 1800); }
+async function copy(text, label) {
+  try { await navigator.clipboard.writeText(text); toast(label + " copied"); }
+  catch { toast("Couldn't copy. Select the text and copy it instead."); }
 }
 
-function save(id, patch, card) {
-  if (!col || !canWrite) return;
-  const note = card && card.querySelector(".saved");
+// ---------------- state
+let db = null, uid = null, canWrite = true;
+let companies = [], posts = [];
+let profile = {};
+const openCards = new Set();
+const letterMode = {};             // company id -> "email" | "letter"
+const confirmDelete = new Set();
+let ui = { tab: "companies", type: "all", status: "all", q: "", postFilter: "all" };
+try { Object.assign(ui, JSON.parse(localStorage.getItem("tracker-ui") || "{}")); } catch {}
+try { profile = JSON.parse(localStorage.getItem("tracker-profile") || "{}"); } catch {}
+const rememberUi = () => { try { localStorage.setItem("tracker-ui", JSON.stringify({ tab: ui.tab, type: ui.type, status: ui.status, postFilter: ui.postFilter, hideBpo: $("hideBpo").checked })); } catch {} };
+if (typeof ui.hideBpo === "boolean") $("hideBpo").checked = ui.hideBpo;
+
+// ---------------- saving (one write chain per doc)
+const pending = {};
+function save(coll, list, id, patch, note) {
+  const item = list.find((x) => x.id === id);
+  if (item) Object.assign(item, patch);
+  if (!db || !canWrite) { if (note) note.textContent = "Sign in to save changes."; return; }
   if (note) note.textContent = "Saving…";
-  const job = jobs.find((j) => j.id === id);
-  if (job) Object.assign(job, patch);
-  pending[id] = (pending[id] || Promise.resolve()).then(() =>
-    col.doc(id).update(patch).then(
+  const key = coll + "/" + id;
+  pending[key] = (pending[key] || Promise.resolve()).then(() =>
+    db.collection(coll).doc(id).update(patch).then(
       () => { if (note) note.textContent = "Saved"; },
-      (e) => {
-        if (note) note.textContent = e && e.code === "invalid_argument"
-          ? "You can view this tracker but not change it." : "Couldn't save. Check your connection and try again.";
-        if (e && e.code === "invalid_argument") canWrite = false;
-      }));
+      (e) => { if (note) note.textContent = e && e.code === "invalid_argument" ? "You can view this tracker but not change it." : "Couldn't save. Check your connection and try again."; }));
+}
+function statusPatch(item, status) {
+  const p = { status };
+  if (status !== "to-apply" && status !== "skip" && !item.appliedOn) p.appliedOn = today();
+  return p;
 }
 
-function visible(j) {
-  if ($("hideBpo").checked && j.companyType === "bpo") return false;
-  if ($("hideClosed").checked && (j.status === "rejected" || j.status === "skip")) return false;
-  if (filter !== "all" && j.status !== filter) return false;
-  return true;
-}
-function sortKey(j) {
-  const order = { interview: 0, offer: 1, "to-apply": 2, applied: 3, rejected: 4, skip: 5 };
-  return [order[j.status] ?? 2, j.status === "interview" ? (j.interviewAt || "9") : "", j.rank ?? 99];
-}
-function cmp(a, b) {
-  const x = sortKey(a), y = sortKey(b);
-  for (let i = 0; i < x.length; i++) { if (x[i] < y[i]) return -1; if (x[i] > y[i]) return 1; }
-  return 0;
-}
-
-function renderCounts() {
-  const base = jobs.filter((j) => !($("hideBpo").checked && j.companyType === "bpo"));
-  const n = (s) => base.filter((j) => j.status === s).length;
-  const items = [["all", "All", base.length], ["to-apply", "To apply", n("to-apply")], ["applied", "Applied", n("applied")], ["interview", "Interviews", n("interview")], ["offer", "Offers", n("offer")]];
-  $("counts").replaceChildren(...items.map(([key, label, num]) =>
-    el("button", { class: "count", type: "button", "aria-pressed": String(filter === key), onclick: () => { filter = key; render(); } },
-      el("b", { text: String(num) }), label)));
-  const upcoming = jobs.filter((j) => j.interviewAt && new Date(j.interviewAt) >= new Date(Date.now() - 3600e3))
-    .sort((a, b) => a.interviewAt.localeCompare(b.interviewAt))[0];
-  $("nextInterview").textContent = upcoming ? `Next interview: ${upcoming.company}, ${fmtWhen(upcoming.interviewAt)}` : "";
-}
-
-function card(j) {
-  const c = el("article", { class: "card" + (j.status === "rejected" || j.status === "skip" ? " dim" : "") });
-  const status = STATUSES.find((s) => s[0] === j.status) || STATUSES[0];
-  const posting = safeUrl(j.url);
-  const site = safeUrl(j.companyUrl);
-
-  const head = el("div", { class: "head" },
-    el("h2", { class: "role", text: j.role || "Untitled role" }),
-    el("div", { class: "co" },
-      el("span", { text: j.company || "" }),
-      el("span", { class: "pill " + (j.companyType || "unclear"), text: TYPE_LABEL[j.companyType] || "Unverified" }),
-      el("span", { class: "pill st-" + status[0], text: status[1] })),
-    el("div", { class: "meta" },
-      j.location && el("span", { text: "📍 " + j.location }),
-      j.setup && el("span", { text: j.setup }),
-      j.pay && el("span", { text: "💰 " + j.pay }),
-      j.source && el("span", { text: "via " + j.source }),
-      j.posted && el("span", { text: "Posted " + fmtDate(j.posted) })));
-
-  const body = el("div", { class: "body" },
-    j.about && el("p", { class: "about", text: j.about }),
-    j.flag && el("div", { class: "flag", text: "⚠ " + j.flag }),
-    Array.isArray(j.specs) && j.specs.length && el("details", { class: "specs" },
-      el("summary", { text: "What they're looking for" }),
-      el("ul", {}, j.specs.map((s) => el("li", { text: String(s) })))),
-    el("div", { class: "links" },
-      posting && el("a", { class: "btn primary", href: posting, target: "_blank", rel: "noopener" }, "Open posting ↗"),
-      site && el("a", { class: "btn", href: site, target: "_blank", rel: "noopener" }, "Company site ↗")));
-
-  // Tracking row
-  const applied = el("input", { type: "checkbox", id: "ap-" + j.id, checked: j.status !== "to-apply" && j.status !== "skip" ? true : false, disabled: !canWrite });
-  const appliedOn = el("input", { type: "date", id: "on-" + j.id, value: j.appliedOn || "", disabled: !canWrite });
-  const interview = el("input", { type: "datetime-local", id: "iv-" + j.id, value: j.interviewAt || "", disabled: !canWrite });
-  const sel = el("select", { id: "st-" + j.id, disabled: !canWrite }, STATUSES.map(([v, l]) => el("option", { value: v, selected: v === j.status, text: l })));
-  const notes = el("textarea", { id: "nt-" + j.id, rows: "2", placeholder: "Interviewer, what they asked, follow-up…", disabled: !canWrite });
-  notes.value = j.notes || "";
-
+// ---------------- tracking row (shared by companies and posts)
+function trackRow(coll, list, item, rerender) {
+  const box = el("div", { class: "track" });
+  const note = el("div", { class: "saved" });
+  const id = coll + "-" + item.id;
+  const applied = el("input", { type: "checkbox", id: "ap-" + id, checked: item.status !== "to-apply" && item.status !== "skip", disabled: !canWrite });
+  const on = el("input", { type: "date", id: "on-" + id, value: item.appliedOn || "", disabled: !canWrite });
+  const iv = el("input", { type: "datetime-local", id: "iv-" + id, value: item.interviewAt || "", disabled: !canWrite });
+  const sel = el("select", { id: "st-" + id, disabled: !canWrite }, STATUSES.map(([v, l]) => el("option", { value: v, selected: v === item.status, text: l })));
+  const notes = el("textarea", { id: "nt-" + id, rows: "2", placeholder: "Who you talked to, what they asked, follow-up date…", disabled: !canWrite });
+  notes.value = item.notes || "";
   applied.addEventListener("change", () => {
-    const patch = applied.checked
-      ? { status: j.status === "to-apply" || j.status === "skip" ? "applied" : j.status, appliedOn: j.appliedOn || today() }
-      : { status: "to-apply", appliedOn: "" };
-    save(j.id, patch, c); render();
+    save(coll, list, item.id, applied.checked
+      ? { status: item.status === "to-apply" || item.status === "skip" ? "applied" : item.status, appliedOn: item.appliedOn || today() }
+      : { status: "to-apply", appliedOn: "" }, note);
+    rerender();
   });
-  appliedOn.addEventListener("change", () => save(j.id, { appliedOn: appliedOn.value }, c));
-  interview.addEventListener("change", () => {
-    const patch = { interviewAt: interview.value };
-    if (interview.value && ["to-apply", "applied"].includes(j.status)) { patch.status = "interview"; if (!j.appliedOn) patch.appliedOn = today(); }
-    save(j.id, patch, c); render();
+  on.addEventListener("change", () => save(coll, list, item.id, { appliedOn: on.value }, note));
+  iv.addEventListener("change", () => {
+    const p = { interviewAt: iv.value };
+    if (iv.value && ["to-apply", "applied"].includes(item.status)) { p.status = "interview"; if (!item.appliedOn) p.appliedOn = today(); }
+    save(coll, list, item.id, p, note); rerender();
   });
-  sel.addEventListener("change", () => {
-    const patch = { status: sel.value };
-    if (sel.value !== "to-apply" && sel.value !== "skip" && !j.appliedOn) patch.appliedOn = today();
-    save(j.id, patch, c); render();
-  });
+  sel.addEventListener("change", () => { save(coll, list, item.id, statusPatch(item, sel.value), note); rerender(); });
   let t;
-  notes.addEventListener("input", () => { clearTimeout(t); t = setTimeout(() => save(j.id, { notes: notes.value }, c), 800); });
-  notes.addEventListener("blur", () => { clearTimeout(t); if ((j.notes || "") !== notes.value) save(j.id, { notes: notes.value }, c); });
+  notes.addEventListener("input", () => { clearTimeout(t); t = setTimeout(() => save(coll, list, item.id, { notes: notes.value }, note), 800); });
+  notes.addEventListener("blur", () => { clearTimeout(t); if ((item.notes || "") !== notes.value) save(coll, list, item.id, { notes: notes.value }, note); });
+  box.append(
+    el("label", { class: "check", for: "ap-" + id }, applied, "I applied"),
+    el("label", { class: "field", for: "on-" + id }, "Applied on", on),
+    el("label", { class: "field", for: "iv-" + id }, "Interview date & time", iv),
+    el("label", { class: "field", for: "st-" + id }, "Status", sel),
+    el("label", { class: "field wide", for: "nt-" + id }, "Notes", notes), note);
+  return box;
+}
 
-  const del = confirmDelete.has(j.id)
-    ? el("span", { style: "display:flex;gap:6px" },
-        el("button", { class: "btn danger", type: "button", onclick: () => { confirmDelete.delete(j.id); col.doc(j.id).delete().catch(() => {}); } }, "Yes, remove"),
-        el("button", { class: "btn", type: "button", onclick: () => { confirmDelete.delete(j.id); render(); } }, "Keep"))
-    : el("button", { class: "btn", type: "button", disabled: !canWrite, onclick: () => { confirmDelete.add(j.id); render(); } }, "Remove");
+// ---------------- letters
+const P = (v, label) => (v && String(v).trim() ? { t: String(v).trim() } : { ph: label });
+function surname(n) { const parts = (n || "").trim().split(/\s+/); return parts.length ? parts[parts.length - 1] : ""; }
+function courseShort(c) { return ({ "BS Information Technology": "BSIT", "BS Computer Science": "BSCS", "BS Information Systems": "BSIS", "BS Computer Engineering": "BSCpE" })[c] || c; }
+function letterParts(c, mode) {
+  const p = profile, L = [];
+  const add = (...xs) => L.push(...xs);
+  const name = P(p.name, "Your full name"), course = P(p.course, "Your course"), school = P(p.school, "Your school");
+  const year = P(p.year, "year level"), hours = P(p.hours, "number of"), start = P(p.start && longDate(p.start), "start date");
+  const skills = P(p.skills, "your main skills"), phone = P(p.phone, "your mobile number"), email = P(p.email, "your email");
+  const project = p.project && p.project.trim() ? p.project.trim() : "";
+  if (mode === "letter") {
+    add({ t: longDate("") + "\n\n" });
+    add({ t: c.contactName + "\n" + c.contactTitle + "\n" + c.name + "\n" + c.address + "\n\n" });
+  }
+  add({ t: c.salutation + "\n\n" });
+  add({ t: "I am " }, name, { t: ", a " }, year, { t: " " }, course, { t: " student at " }, school,
+      { t: ". I am writing to apply for an on-the-job training (OJT) position at " + c.name + ". My program requires " }, hours,
+      { t: " hours of training, and I am available to start on " }, start, { t: ".\n\n" });
+  add({ t: c.hook + "\n\n" });
+  add({ t: "In my studies I have worked with " }, skills, { t: "." });
+  if (project) add({ t: " I also " + (/^(built|made|developed|created|led|designed)/i.test(project) ? "" : "worked on ") + project.replace(/\.$/, "") + "." });
+  add({ t: " I learn quickly, take instructions seriously, and I am ready to help your team in any task assigned to me.\n\n" });
+  add({ t: "Our school has an active Memorandum of Agreement with " + c.name + " for student internships, and I have attached my résumé and my school's endorsement letter for your review.\n\n" });
+  add({ t: "Thank you for considering my application. I can be reached at " }, phone, { t: " or " }, email, { t: ". I would be glad to come in for an interview at your convenience.\n\n" });
+  add({ t: mode === "letter" ? "Respectfully yours,\n\n\n" : "Respectfully,\n" }, name, { t: "\n" }, course, { t: ", " }, school);
+  return L;
+}
+const plain = (parts) => parts.map((x) => (x.t != null ? x.t : "[" + x.ph + "]")).join("");
+function letterSection(c) {
+  const mode = letterMode[c.id] || "email";
+  const parts = letterParts(c, mode);
+  const paper = el("div", { class: "paper", "aria-label": "Application letter" },
+    parts.map((x) => (x.t != null ? document.createTextNode(x.t) : el("span", { class: "ph", text: x.ph }))));
+  const subject = "OJT Application – " + (surname(profile.name) || "[Surname]") + " – " + (courseShort(profile.course) || "[Course]");
+  const missing = parts.some((x) => x.ph);
+  const emailTo = (c.emails || [])[0];
+  const mailHref = emailTo ? "mailto:" + encodeURIComponent(emailTo) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(plain(parts)) : null;
+  return el("div", { class: "sec" },
+    el("h3", { text: "Application letter" }),
+    el("div", { class: "lettertabs" },
+      el("button", { class: "chip", type: "button", "aria-pressed": String(mode === "email"), onclick: () => { letterMode[c.id] = "email"; renderCompanies(); } }, "Email version"),
+      el("button", { class: "chip", type: "button", "aria-pressed": String(mode === "letter"), onclick: () => { letterMode[c.id] = "letter"; renderCompanies(); } }, "Printed letter")),
+    missing && el("p", { class: "hint", text: "Highlighted parts are missing. Fill in “Your details” at the top and they'll appear here." }),
+    mode === "email" && el("div", { class: "subject" }, el("b", { text: "Subject: " }), subject),
+    paper,
+    el("div", { class: "row" },
+      mode === "email" && el("button", { class: "btn", type: "button", onclick: () => copy(subject, "Subject") }, "Copy subject"),
+      el("button", { class: "btn primary", type: "button", onclick: () => copy(plain(parts), "Letter") }, "Copy letter"),
+      mode === "email" && mailHref && el("a", { class: "btn", href: mailHref }, "Open in email app")),
+    mode === "letter" && el("p", { class: "hint", text: "Paste into Word or Google Docs, sign above your name, and print it with your résumé and endorsement letter." }));
+}
 
-  const track = el("div", { class: "track" },
-    el("label", { class: "check", for: "ap-" + j.id }, applied, "I applied"),
-    el("label", { class: "field", for: "on-" + j.id }, "Applied on", appliedOn),
-    el("label", { class: "field", for: "iv-" + j.id }, "Interview date & time", interview),
-    el("label", { class: "field", for: "st-" + j.id }, "Status", sel),
-    el("label", { class: "field wide", for: "nt-" + j.id }, "Notes", notes),
-    el("div", { class: "saved" }),
-    el("div", { style: "grid-column:1/-1;display:flex;justify-content:flex-end" }, del));
+// ---------------- companies view
+function matchesQuery(c, q) {
+  if (!q) return true;
+  const hay = [c.name, c.legalName, c.category, c.area, c.address, c.what, (c.tags || []).join(" ")].join(" ").toLowerCase();
+  return q.toLowerCase().split(/\s+/).every((w) => hay.includes(w));
+}
+function renderChips() {
+  const n = (f) => companies.filter(f).length;
+  const types = [["all", "All", companies.length], ["product", "Tech companies", n((c) => c.type === "product")], ["unclear", "Not verified", n((c) => c.type === "unclear")], ["bpo", "BPO-type", n((c) => c.type === "bpo")]];
+  $("typeChips").replaceChildren(...types.map(([k, l, num]) => el("button", { class: "chip", type: "button", "aria-pressed": String(ui.type === k), onclick: () => { ui.type = k; rememberUi(); renderCompanies(); } }, l, el("b", { text: String(num) }))));
+  const sts = [["all", "Any status"], ["to-apply", "To apply"], ["applied", "Applied"], ["interview", "Interview"], ["offer", "Offer"], ["closed", "Rejected / skipped"]];
+  $("statusChips").replaceChildren(...sts.map(([k, l]) => {
+    const num = k === "all" ? null : companies.filter((c) => (k === "closed" ? c.status === "rejected" || c.status === "skip" : c.status === k)).length;
+    return el("button", { class: "chip", type: "button", "aria-pressed": String(ui.status === k), onclick: () => { ui.status = k; rememberUi(); renderCompanies(); } }, l, num != null && el("b", { text: String(num) }));
+  }));
+}
+function companyCard(c) {
+  const open = openCards.has(c.id);
+  const status = STATUSES.find((s) => s[0] === c.status) || STATUSES[0];
+  const card = el("article", { class: "card" + (c.status === "rejected" || c.status === "skip" ? " dim" : "") });
+  const toggle = () => { open ? openCards.delete(c.id) : openCards.add(c.id); renderCompanies(); };
+  const head = el("div", { class: "head", onclick: (e) => { if (!e.target.closest("a,button")) toggle(); } },
+    el("div", { class: "titlerow" },
+      el("h2", { class: "name", text: c.name }),
+      el("button", { class: "toggle", type: "button", "aria-expanded": String(open), onclick: toggle }, open ? "Close" : "Details & letter")),
+    el("div", { class: "pills" },
+      el("span", { class: "pill " + c.type, text: TYPE_LABEL[c.type] || "Not verified" }),
+      c.status !== "to-apply" && el("span", { class: "pill st-" + status[0], text: status[1] + (c.status === "interview" && c.interviewAt ? " · " + fmtWhen(c.interviewAt) : "") })),
+    el("div", { class: "meta" }, el("span", { text: "📍 " + c.area }), el("span", { text: c.category })),
+    el("p", { class: "what", text: c.what }),
+    (c.tags || []).length > 0 && el("div", { class: "tags" }, c.tags.map((t) => el("span", { class: "tag", text: t }))));
+  card.append(head);
+  if (!open) return card;
 
-  c.append(head, body, track);
+  const site = safeUrl(c.website);
+  const map = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(c.address);
+  const contactBits = [];
+  for (const ph of c.phones || []) contactBits.push(["Phone", el("span", { class: "copyable" }, el("span", { text: ph }), el("button", { class: "mini", type: "button", onclick: () => copy(ph.replace(/\s*\(.*\)$/, ""), "Number") }, "Copy"))]);
+  for (const em of c.emails || []) contactBits.push(["Email", el("span", { class: "copyable" }, el("span", { text: em }), el("button", { class: "mini", type: "button", onclick: () => copy(em, "Email") }, "Copy"))]);
+  if (!(c.phones || []).length && !(c.emails || []).length) contactBits.push(["Reach them", el("span", { text: "No phone or email in the school list. Ask your OJT coordinator, or visit the office." })]);
+
+  const detail = el("div", { class: "detail" },
+    c.flag && el("div", { class: "flag", text: "⚠ " + c.flag }),
+    c.tip && el("div", { class: "tip", text: "💡 " + c.tip }),
+    el("div", { class: "sec" },
+      el("h3", { text: "Who to send it to" }),
+      el("dl", { class: "info" },
+        el("dt", { text: "Contact" }), el("dd", { text: c.contactName + " — " + c.contactTitle }),
+        ...contactBits.flatMap(([k, v]) => [el("dt", { text: k }), el("dd", {}, v)]),
+        el("dt", { text: "Address" }), el("dd", {}, c.address + " ", el("a", { href: map, target: "_blank", rel: "noopener" }, "Map ↗")),
+        site && el("dt", { text: "Website" }), site && el("dd", {}, el("a", { href: site, target: "_blank", rel: "noopener", text: site.replace(/^https:\/\/(www\.)?/, "").replace(/\/$/, "") + " ↗" })),
+        el("dt", { text: "School MOA" }), el("dd", { text: "Since " + c.moaSince + (c.moaValidUntil ? " · valid until " + c.moaValidUntil : "") }),
+        c.legalName && c.legalName !== c.name && el("dt", { text: "Registered as" }), c.legalName && c.legalName !== c.name && el("dd", { text: c.legalName }))),
+    el("div", { class: "sec" }, el("h3", { text: "Your progress" }), trackRow("companies", companies, c, renderCompanies)),
+    letterSection(c));
+  card.append(detail);
+  return card;
+}
+function renderCompanies() {
+  $("countCompanies").textContent = companies.length;
+  renderChips();
+  const shown = companies.filter((c) =>
+    (ui.type === "all" || c.type === ui.type) &&
+    (ui.status === "all" || (ui.status === "closed" ? c.status === "rejected" || c.status === "skip" : c.status === ui.status)) &&
+    matchesQuery(c, ui.q)).sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99));
+  $("companyList").replaceChildren(...shown.map(companyCard));
+  const s = $("companiesStatus");
+  if (!db) return;
+  if (!companies.length) { s.hidden = false; s.className = "note"; s.textContent = "No companies yet."; }
+  else if (!shown.length) { s.hidden = false; s.className = "note"; s.textContent = "No companies match. Clear the search or pick another filter."; }
+  else s.hidden = true;
+  renderNext();
+}
+
+// ---------------- posts view
+function postCard(j) {
+  const status = STATUSES.find((s) => s[0] === j.status) || STATUSES[0];
+  const posting = safeUrl(j.url), site = safeUrl(j.companyUrl);
+  const c = el("article", { class: "card post" + (j.status === "rejected" || j.status === "skip" ? " dim" : "") });
+  c.append(
+    el("div", { class: "head", style: "cursor:default" },
+      el("h2", { class: "name", text: j.role || "Untitled role" }),
+      el("div", { class: "pills" }, el("span", { text: j.company || "", style: "font-weight:500" }),
+        el("span", { class: "pill " + (j.companyType || "unclear"), text: TYPE_LABEL[j.companyType] || "Not verified" }),
+        el("span", { class: "pill st-" + status[0], text: status[1] })),
+      el("div", { class: "meta" }, j.location && el("span", { text: "📍 " + j.location }), j.setup && el("span", { text: j.setup }),
+        j.source && el("span", { text: "via " + j.source }), j.posted && el("span", { text: "Posted " + fmtDate(j.posted) }))),
+    el("div", { class: "body" },
+      j.about && el("p", { class: "what", text: j.about }),
+      j.flag && el("div", { class: "flag", text: "⚠ " + j.flag }),
+      Array.isArray(j.specs) && j.specs.length > 0 && el("details", { class: "specs" }, el("summary", { text: "What they're looking for" }), el("ul", {}, j.specs.map((s) => el("li", { text: String(s) })))),
+      el("div", { class: "row" },
+        posting && el("a", { class: "btn primary", href: posting, target: "_blank", rel: "noopener" }, "Open posting ↗"),
+        site && el("a", { class: "btn", href: site, target: "_blank", rel: "noopener" }, "Company site ↗"),
+        confirmDelete.has(j.id)
+          ? el("span", { class: "row" },
+              el("button", { class: "btn danger", type: "button", onclick: () => { confirmDelete.delete(j.id); db && db.collection("internships").doc(j.id).delete().catch(() => toast("Couldn't remove it.")); } }, "Yes, remove"),
+              el("button", { class: "btn", type: "button", onclick: () => { confirmDelete.delete(j.id); renderPosts(); } }, "Keep"))
+          : el("button", { class: "btn", type: "button", disabled: !canWrite, onclick: () => { confirmDelete.add(j.id); renderPosts(); } }, "Remove"))),
+    trackRow("internships", posts, j, renderPosts));
   return c;
 }
-
-function render() {
-  renderCounts();
-  const shown = jobs.filter(visible).sort(cmp);
-  $("list").replaceChildren(...shown.map(card));
-  if (!col) return;
-  if (!jobs.length) { $("status").hidden = false; $("status").className = "note"; $("status").textContent = "No internships yet. New matches from the daily scan will appear here, or add one below."; }
-  else if (!shown.length) { $("status").hidden = false; $("status").className = "note"; $("status").textContent = "Nothing in this view. Try another filter above."; }
-  else $("status").hidden = true;
+function renderPosts() {
+  $("countPosts").textContent = posts.length;
+  const base = posts.filter((j) => !($("hideBpo").checked && j.companyType === "bpo"));
+  const items = [["all", "All"], ["to-apply", "To apply"], ["applied", "Applied"], ["interview", "Interviews"]];
+  $("postChips").replaceChildren(...items.map(([k, l]) => el("button", { class: "chip", type: "button", "aria-pressed": String(ui.postFilter === k), onclick: () => { ui.postFilter = k; rememberUi(); renderPosts(); } },
+    l, el("b", { text: String(k === "all" ? base.length : base.filter((j) => j.status === k).length) }))));
+  const order = { interview: 0, offer: 1, "to-apply": 2, applied: 3, rejected: 4, skip: 5 };
+  const shown = base.filter((j) => ui.postFilter === "all" || j.status === ui.postFilter)
+    .sort((a, b) => (order[a.status] ?? 2) - (order[b.status] ?? 2) || (a.rank ?? 99) - (b.rank ?? 99));
+  $("postList").replaceChildren(...shown.map(postCard));
+  const s = $("postsStatus");
+  if (!db) return;
+  if (!posts.length) { s.hidden = false; s.className = "note"; s.textContent = "No job posts yet. Add one below."; }
+  else if (!shown.length) { s.hidden = false; s.className = "note"; s.textContent = "Nothing in this view. Try another filter."; }
+  else s.hidden = true;
+  renderNext();
+}
+function renderNext() {
+  const all = [...companies.map((c) => ({ who: c.name, at: c.interviewAt })), ...posts.map((j) => ({ who: j.company, at: j.interviewAt }))]
+    .filter((x) => x.at && new Date(x.at) >= new Date(Date.now() - 3600e3)).sort((a, b) => a.at.localeCompare(b.at));
+  $("nextInterview").textContent = all[0] ? "Next interview: " + all[0].who + ", " + fmtWhen(all[0].at) : "";
 }
 
-function remember() {
-  try { localStorage.setItem("tracker-prefs", JSON.stringify({ hideBpo: $("hideBpo").checked, hideClosed: $("hideClosed").checked })); } catch {}
+// Don't rebuild a list while the viewer is typing in it; redraw once they leave the field.
+let deferred = null;
+function whenIdle(fn) {
+  const a = document.activeElement;
+  if (a && a.matches("input, textarea, select") && a.closest("#companyList, #postList")) { deferred = fn; return; }
+  fn();
 }
-try {
-  const p = JSON.parse(localStorage.getItem("tracker-prefs") || "{}");
-  if (typeof p.hideBpo === "boolean") $("hideBpo").checked = p.hideBpo;
-  if (typeof p.hideClosed === "boolean") $("hideClosed").checked = p.hideClosed;
-} catch {}
-$("hideBpo").addEventListener("change", () => { remember(); render(); });
-$("hideClosed").addEventListener("change", () => { remember(); render(); });
+document.addEventListener("focusout", () => setTimeout(() => {
+  if (deferred && !(document.activeElement && document.activeElement.closest("#companyList, #postList") && document.activeElement.matches("input, textarea, select"))) { const f = deferred; deferred = null; f(); }
+}, 0));
 
+// ---------------- tabs
+function showTab(t) {
+  ui.tab = t; rememberUi();
+  $("tab-companies").setAttribute("aria-selected", String(t === "companies"));
+  $("tab-posts").setAttribute("aria-selected", String(t === "posts"));
+  $("view-companies").hidden = t !== "companies";
+  $("view-posts").hidden = t !== "posts";
+}
+$("tab-companies").addEventListener("click", () => showTab("companies"));
+$("tab-posts").addEventListener("click", () => showTab("posts"));
+$("hideBpo").addEventListener("change", () => { rememberUi(); renderPosts(); });
+let qt;
+$("search").addEventListener("input", (e) => { clearTimeout(qt); qt = setTimeout(() => { ui.q = e.target.value.trim(); renderCompanies(); }, 120); });
+
+// ---------------- profile
+const PF = { name: "pName", course: "pCourse", year: "pYear", school: "pSchool", hours: "pHours", start: "pStart", phone: "pPhone", email: "pEmail", skills: "pSkills", project: "pProject" };
+function fillProfileForm() { for (const [k, id] of Object.entries(PF)) $(id).value = profile[k] || ""; profileState(); }
+function profileState() {
+  const need = ["name", "course", "school", "hours", "phone", "email", "skills"];
+  const done = need.every((k) => profile[k] && String(profile[k]).trim());
+  $("profileState").replaceChildren(el("span", { class: done ? "done-chip" : "todo-chip", text: done ? "Done" : "To do" }));
+  return done;
+}
+let pt;
+function onProfileInput() {
+  for (const [k, id] of Object.entries(PF)) profile[k] = $(id).value;
+  try { localStorage.setItem("tracker-profile", JSON.stringify(profile)); } catch {}
+  profileState(); renderCompanies();
+  clearTimeout(pt);
+  pt = setTimeout(async () => {
+    if (!db || !uid) { $("profileSaved").textContent = "Saved on this device."; return; }
+    try { await db.doc("data/users/" + uid + "/profile").set({ ...profile }); $("profileSaved").textContent = "Saved to your account."; }
+    catch { $("profileSaved").textContent = "Saved on this device only (couldn't reach your account)."; }
+  }, 700);
+}
+$("profileForm").addEventListener("input", onProfileInput);
+$("profileForm").addEventListener("change", onProfileInput);
+$("profileForm").addEventListener("submit", (e) => e.preventDefault());
+
+// ---------------- add post
 $("addForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-  if (!col) return;
+  if (!db) return;
   const role = $("addRole").value.trim(), company = $("addCompany").value.trim();
   if (!role || !company) return;
   const url = $("addUrl").value.trim();
   try {
-    await col.add({ role, company, location: $("addLocation").value.trim(), url: url.startsWith("https://") ? url : "",
-      companyType: $("addType").value, source: "Added by you", status: "to-apply", appliedOn: "", interviewAt: "", notes: "",
-      posted: today(), rank: 50, specs: [] });
-    $("addForm").reset(); $("addBox").open = false;
-  } catch (err) {
-    $("status").hidden = false; $("status").className = "note err";
-    $("status").textContent = err && err.code === "quota_exceeded" ? "The tracker is full. Remove some old internships first." : "Couldn't add it. Check your connection and try again.";
-  }
+    await db.collection("internships").add({ role, company, location: $("addLocation").value.trim(), url: url.startsWith("https://") ? url : "",
+      companyType: $("addType").value, source: "Added by you", status: "to-apply", appliedOn: "", interviewAt: "", notes: "", posted: today(), rank: 50, specs: [] });
+    $("addForm").reset(); $("addBox").open = false; toast("Post added");
+  } catch (err) { toast(err && err.code === "quota_exceeded" ? "The tracker is full. Remove some old posts first." : "Couldn't add it. Try again."); }
 });
 
-render();
+// ---------------- boot
+showTab(ui.tab === "posts" ? "posts" : "companies");
+fillProfileForm();
+if (!profileState()) $("profileBox").open = true;
+renderCompanies(); renderPosts();
 (async () => {
-  const db = await window.claude?.use?.("db");
-  if (!db) {
-    $("status").className = "note err";
-    $("status").textContent = "Sign in to claude.ai to see and update your internships.";
+  const store = await window.claude?.use?.("db");
+  if (!store) {
+    for (const id of ["companiesStatus", "postsStatus"]) { $(id).className = "note err"; $(id).textContent = "Sign in to claude.ai to see and update your tracker."; }
     return;
   }
+  db = store;
   try {
     const user = await window.claude.use("user");
-    if (user) { const w = await user.can("data.write"); if (w === false) canWrite = false; }
+    if (user) { uid = await user.id(); const w = await user.can("data.write"); if (w === false) canWrite = false; }
   } catch {}
-  col = db.collection(COLL);
-  const slow = setTimeout(() => { $("status").textContent = "Still connecting… your list will appear when it loads."; }, 10000);
-  col.onSnapshot((snap) => {
+  if (uid) {
+    try {
+      const snap = await db.doc("data/users/" + uid + "/profile").get();
+      if (snap.exists) { profile = { ...profile, ...snap.data() }; try { localStorage.setItem("tracker-profile", JSON.stringify(profile)); } catch {} fillProfileForm(); if (profileState()) $("profileBox").open = false; }
+    } catch {}
+  }
+  const slow = setTimeout(() => { for (const id of ["companiesStatus", "postsStatus"]) $(id).textContent = "Still connecting… your list will appear when it loads."; }, 10000);
+  db.collection("companies").onSnapshot((snap) => {
     if (!snap.metadata.fromCache) clearTimeout(slow);
-    jobs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    render();
-  }, () => {
-    clearTimeout(slow);
-    $("status").hidden = false; $("status").className = "note err";
-    $("status").textContent = "Couldn't load your internships. Reload the page to try again.";
-  });
+    companies = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    whenIdle(renderCompanies);
+  }, () => { clearTimeout(slow); $("companiesStatus").hidden = false; $("companiesStatus").className = "note err"; $("companiesStatus").textContent = "Couldn't load companies. Reload the page to try again."; });
+  db.collection("internships").onSnapshot((snap) => {
+    posts = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    whenIdle(renderPosts);
+  }, () => { $("postsStatus").hidden = false; $("postsStatus").className = "note err"; $("postsStatus").textContent = "Couldn't load job posts. Reload the page to try again."; });
 })();
 </script>
