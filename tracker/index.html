@@ -235,6 +235,14 @@ table.sheet { border-collapse: separate; border-spacing: 0; font-size: 13px; min
         <span class="hint" id="sheetHint"></span>
       </div>
       <input class="search" id="search" type="search" placeholder="Search a company, skill or area (e.g. games, AI, Mandaue)…" aria-label="Search companies">
+      <div class="row">
+        <label class="hint" for="sortBy" style="font-weight:600">Sort by</label>
+        <select id="sortBy" class="search" style="width:auto;padding:6px 10px">
+          <option value="az">Name (A–Z)</option>
+          <option value="staff-desc">Staff: biggest first</option>
+          <option value="staff-asc">Staff: smallest first</option>
+        </select>
+      </div>
       <div class="chips" id="typeChips" role="group" aria-label="Filter by company type"></div>
       <div class="chips" id="statusChips" role="group" aria-label="Filter by status"></div>
       <div class="legend">
@@ -315,12 +323,12 @@ let profile = {};
 const openCards = new Set();
 const letterMode = {};             // company id -> "email" | "letter"
 const confirmDelete = new Set();
-let ui = { tab: "companies", type: "all", status: "all", q: "", postFilter: "all", view: "sheet" };
+let ui = { tab: "companies", type: "all", status: "all", q: "", postFilter: "all", view: "sheet", sort: "az" };
 let overlay = null;                // {kind: "company"|"post", id}
 const canHover = window.matchMedia ? window.matchMedia("(hover: hover) and (pointer: fine)").matches : false;
 try { Object.assign(ui, JSON.parse(localStorage.getItem("tracker-ui") || "{}")); } catch {}
 try { profile = JSON.parse(localStorage.getItem("tracker-profile") || "{}"); } catch {}
-const rememberUi = () => { try { localStorage.setItem("tracker-ui", JSON.stringify({ tab: ui.tab, type: ui.type, status: ui.status, postFilter: ui.postFilter, view: ui.view, hideBpo: $("hideBpo").checked })); } catch {} };
+const rememberUi = () => { try { localStorage.setItem("tracker-ui", JSON.stringify({ tab: ui.tab, type: ui.type, status: ui.status, postFilter: ui.postFilter, view: ui.view, sort: ui.sort, hideBpo: $("hideBpo").checked })); } catch {} };
 if (typeof ui.hideBpo === "boolean") $("hideBpo").checked = ui.hideBpo;
 
 // ---------------- saving (one write chain per doc)
@@ -522,7 +530,7 @@ function companyCard(c, inOverlay) {
     el("div", { class: "pills" },
       el("span", { class: "pill " + c.type, text: TYPE_LABEL[c.type] || "Not verified" }),
       c.status !== "to-apply" && el("span", { class: "pill st-" + status[0], text: status[1] + (c.status === "interview" && c.interviewAt ? " · " + fmtWhen(c.interviewAt) : "") })),
-    el("div", { class: "meta" }, el("span", { text: "📍 " + c.area }), el("span", { text: c.category }), el("span", { text: METHOD[applyInfo(c).method] })),
+    el("div", { class: "meta" }, el("span", { text: "📍 " + c.area }), el("span", { text: c.category }), el("span", { text: "👥 " + (c.staff || "Staff not listed") }), el("span", { text: METHOD[applyInfo(c).method] })),
     el("p", { class: "what", text: c.what }),
     (c.tags || []).length > 0 && el("div", { class: "tags" }, c.tags.map((t) => el("span", { class: "tag", text: t }))));
   card.append(head);
@@ -546,6 +554,7 @@ function companyCard(c, inOverlay) {
         ...contactBits.flatMap(([k, v]) => [el("dt", { text: k }), el("dd", {}, v)]),
         el("dt", { text: "Address" }), el("dd", {}, c.address + " ", el("a", { href: map, target: "_blank", rel: "noopener" }, "Map ↗")),
         site && el("dt", { text: "Website" }), site && el("dd", {}, el("a", { href: site, target: "_blank", rel: "noopener", text: site.replace(/^https:\/\/(www\.)?/, "").replace(/\/$/, "") + " ↗" })),
+        el("dt", { text: "Staff" }), el("dd", { text: (c.staff || "Not listed") + (c.staffNote ? " — " + c.staffNote : "") }),
         el("dt", { text: "School MOA" }), el("dd", { text: "Since " + c.moaSince + (c.moaValidUntil ? " · valid until " + c.moaValidUntil : "") }),
         c.legalName && c.legalName !== c.name && el("dt", { text: "Registered as" }), c.legalName && c.legalName !== c.name && el("dd", { text: c.legalName }))),
     el("div", { class: "sec" }, el("h3", { text: "Your progress" }), trackRow("companies", companies, c, renderCompanies)),
@@ -557,8 +566,20 @@ function visibleCompanies() {
   return companies.filter((c) =>
     (ui.type === "all" || c.type === ui.type) &&
     (ui.status === "all" || (ui.status === "closed" ? c.status === "rejected" || c.status === "skip" : c.status === ui.status)) &&
-    matchesQuery(c, ui.q)).sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99));
+    matchesQuery(c, ui.q)).sort(sortCompanies);
 }
+// Companies with no published staff count always sort last.
+function sortCompanies(a, b) {
+  const byName = (a.rank ?? 99) - (b.rank ?? 99);
+  if (ui.sort === "az") return byName;
+  const x = typeof a.staffNum === "number" ? a.staffNum : null, y = typeof b.staffNum === "number" ? b.staffNum : null;
+  if (x == null && y == null) return byName;
+  if (x == null) return 1;
+  if (y == null) return -1;
+  return (ui.sort === "staff-desc" ? y - x : x - y) || byName;
+}
+function setSort(v) { ui.sort = v; $("sortBy").value = v; rememberUi(); renderCompanies(); }
+$("sortBy").addEventListener("change", (e) => setSort(e.target.value));
 function renderCompanies() {
   $("countCompanies").textContent = companies.length;
   renderChips();
@@ -634,7 +655,10 @@ function renderNext() {
 const COL = (i) => { let s = ""; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
 function sheetTable(cols, rows, onHover, onOpen) {
   const letters = el("tr", {}, el("th", { class: "rn colletter" }), ...cols.map((c, i) => el("th", { class: "colletter" + (c.sticky ? " nm" : ""), text: COL(i) })));
-  const heads = el("tr", {}, el("th", { class: "rn", text: "" }), ...cols.map((c) => el("th", { class: c.sticky ? "nm" : "", text: c.label })));
+  const heads = el("tr", {}, el("th", { class: "rn", text: "" }), ...cols.map((c) => c.sortable
+    ? el("th", { class: c.sticky ? "nm" : "" }, el("button", { class: "linkbtn", type: "button", style: "font-size:12px;color:var(--muted)", title: "Sort by staff size",
+        onclick: () => setSort(ui.sort === "staff-desc" ? "staff-asc" : "staff-desc") }, c.label + (ui.sort === "staff-desc" ? " ↓" : ui.sort === "staff-asc" ? " ↑" : " ↕")))
+    : el("th", { class: c.sticky ? "nm" : "", text: c.label })));
   const body = rows.map((r, i) => {
     const tr = el("tr", { class: r.status === "rejected" || r.status === "skip" ? "dim" : "" },
       el("td", { class: "rn", text: String(i + 1) }),
@@ -683,6 +707,7 @@ function companySheet(list) {
     { label: "Applied", cls: "c", cell: (c) => cellApplied("companies", companies, c, rr) },
     { label: "Applied on", cell: (c) => cellDate("companies", companies, c, "appliedOn", "date", rr) },
     { label: "Interview", cell: (c) => cellDate("companies", companies, c, "interviewAt", "datetime-local", rr) },
+    { label: "Staff", sortable: true, cell: (c) => c.staff || "Not listed" },
     { label: "Area", cell: (c) => c.area },
     { label: "What they do", cls: "trunc", cell: (c) => c.what },
     { label: "Good for", cls: "trunc", cell: (c) => (c.tags || []).join(", ") },
@@ -724,6 +749,7 @@ function companyHover(c) {
     c.flag && el("div", { class: "flag", text: "⚠ " + c.flag }),
     c.tip && el("div", { class: "tip", text: "💡 " + c.tip }),
     hoverLine("Good for", (c.tags || []).join(", ")),
+    hoverLine("Staff", (c.staff || "Not listed") + (c.staffNote ? " — " + c.staffNote : "")),
     hoverLine("Address", c.address),
     hoverLine("Contact", c.contactName + " — " + c.contactTitle),
     hoverLine("Phone", (c.phones || []).join(" / ")),
@@ -847,6 +873,8 @@ $("addForm").addEventListener("submit", async (e) => {
 // ---------------- boot
 showTab(ui.tab === "posts" ? "posts" : "companies");
 if (ui.view !== "cards") ui.view = "sheet";
+if (!["az", "staff-desc", "staff-asc"].includes(ui.sort)) ui.sort = "az";
+$("sortBy").value = ui.sort;
 for (const [id, val] of [["viewSheet", "sheet"], ["viewCards", "cards"], ["viewSheet2", "sheet"], ["viewCards2", "cards"]]) $(id).setAttribute("aria-pressed", String(ui.view === val));
 fillProfileForm();
 if (!profileState()) $("profileBox").open = true;
