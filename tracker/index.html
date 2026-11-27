@@ -202,6 +202,7 @@ table.sheet { border-collapse: separate; border-spacing: 0; font-size: 13px; min
           <label class="field">Mobile number<input id="pPhone" inputmode="tel" autocomplete="tel" placeholder="0917 123 4567"></label>
           <label class="field">Email<input id="pEmail" type="email" autocomplete="email" placeholder="you@email.com"></label>
           <label class="field wide">Skills to mention<input id="pSkills" placeholder="e.g. Python, Java, HTML/CSS/JavaScript, SQL, and setting up computer networks"></label>
+          <label class="check field wide" style="text-transform:none;letter-spacing:0;font-size:0.92rem;color:var(--fg)"><input type="checkbox" id="pEndorse"> I already have my school's endorsement letter</label>
           <label class="field wide">Portfolio / GitHub links (optional)<input id="pLinks" placeholder="e.g. andreyforhire.dev and github.com/yourname"></label>
           <label class="field wide">A project you're proud of (optional)<input id="pProject" placeholder="e.g. a student enrollment system for our capstone, built with Laravel and MySQL"></label>
         </form>
@@ -424,7 +425,7 @@ function applySection(c) {
   if (email) {
     const L = composeLinks(c, email);
     if (method === "email") {
-      box.append(el("p", { class: "hint", style: "color:var(--fg)" }, "Opens a new email to ", el("b", { text: email }), " with the subject and your letter filled in. ", el("b", { text: "Attach your résumé and endorsement letter, then press Send." })));
+      box.append(el("p", { class: "hint", style: "color:var(--fg)" }, "Opens a new email to ", el("b", { text: email }), " with the subject and your letter filled in. ", el("b", { text: profile.hasEndorsement ? "Attach your résumé and endorsement letter, then press Send." : "Attach your résumé, then press Send." })));
       row.append(el("a", { class: "btn primary big", href: L.gmail, target: "_blank", rel: "noopener" }, "Send with Gmail ↗"),
         el("a", { class: "btn", href: L.outlook, target: "_blank", rel: "noopener" }, "Outlook ↗"),
         el("a", { class: "btn", href: L.mailto }, "Email app"));
@@ -472,7 +473,9 @@ function letterParts(c, mode) {
   if (project) add({ t: " I also " + (/^(co-?)?(built|made|developed|created|led|designed|wrote|launched)/i.test(project) ? "" : "worked on ") + project.replace(/\.$/, "") + "." });
   if (p.links && p.links.trim()) add({ t: " You can see my projects at " + p.links.trim().replace(/\.$/, "") + "." });
   add({ t: " I learn quickly, take instructions seriously, and I am ready to help your team in any task assigned to me.\n\n" });
-  add({ t: "Our school has an active Memorandum of Agreement with " + c.name + " for student internships, and I have attached my résumé and my school's endorsement letter for your review.\n\n" });
+  add({ t: "Our school has an active Memorandum of Agreement with " + c.name + " for student internships. " + (p.hasEndorsement
+    ? "I have attached my résumé and my school's endorsement letter for your review.\n\n"
+    : "I have attached my résumé for your review, and I will send my school's endorsement letter as soon as it is issued.\n\n") });
   add({ t: "Thank you for considering my application. I can be reached at " }, phone, { t: " or " }, email, { t: ". I would be glad to come in for an interview at your convenience.\n\n" });
   add({ t: mode === "letter" ? "Respectfully yours,\n\n\n" : "Respectfully,\n" }, name, { t: "\n" }, course, { t: ", " }, school);
   return L;
@@ -833,7 +836,7 @@ $("search").addEventListener("input", (e) => { clearTimeout(qt); qt = setTimeout
 
 // ---------------- profile
 const PF = { name: "pName", course: "pCourse", year: "pYear", school: "pSchool", hours: "pHours", start: "pStart", phone: "pPhone", email: "pEmail", skills: "pSkills", links: "pLinks", project: "pProject" };
-function fillProfileForm() { for (const [k, id] of Object.entries(PF)) $(id).value = profile[k] || ""; profileState(); }
+function fillProfileForm() { for (const [k, id] of Object.entries(PF)) $(id).value = profile[k] || ""; $("pEndorse").checked = !!profile.hasEndorsement; profileState(); }
 function profileState() {
   const need = ["name", "course", "school", "hours", "phone", "email", "skills"];
   const done = need.every((k) => profile[k] && String(profile[k]).trim());
@@ -843,6 +846,7 @@ function profileState() {
 let pt;
 function onProfileInput() {
   for (const [k, id] of Object.entries(PF)) profile[k] = $(id).value;
+  profile.hasEndorsement = $("pEndorse").checked;
   try { localStorage.setItem("tracker-profile", JSON.stringify(profile)); } catch {}
   profileState(); renderCompanies();
   clearTimeout(pt);
